@@ -184,11 +184,18 @@ export default function ReleaseDetailsPage() {
                           This release has not been analyzed yet. Upload a project source archive (.ZIP) to initiate the automated multi-engine evaluation pipeline.
                         </p>
                       </div>
-                      <Link href={`/releases/${releaseId}/upload`}>
-                        <Button size="sm" leftIcon={<UploadCloud className="w-3.5 h-3.5" />}>
-                          Upload Project (.ZIP)
-                        </Button>
-                      </Link>
+                      <div className="flex items-center justify-center gap-2">
+                        <Link href={`/releases/${releaseId}/upload`}>
+                          <Button size="sm" variant="outline" leftIcon={<UploadCloud className="w-3.5 h-3.5" />}>
+                            Upload Project (.ZIP)
+                          </Button>
+                        </Link>
+                        <Link href={`/releases/${releaseId}/analysis`}>
+                          <Button size="sm" leftIcon={<FileCode2 className="w-3.5 h-3.5" />}>
+                            Start / View Analysis
+                          </Button>
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
 

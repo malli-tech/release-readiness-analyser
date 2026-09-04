@@ -1,6 +1,74 @@
-import { Finding, FindingCategory, FindingSeverity } from './finding';
+import { Finding, FindingCategory } from './finding';
 import { ReleaseStatus } from './release';
 
+export interface DetectionEvidence {
+  technology: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  evidence: string[];
+}
+
+export interface FileDescriptor {
+  relativePath: string;
+  filename: string;
+  extension: string;
+  size: number;
+  isDirectory: boolean;
+  fileType: string;
+}
+
+export interface ProjectStructure {
+  totalFiles: number;
+  totalDirectories: number;
+  sourceFileCount: number;
+  testFileCount: number;
+  manifestFileCount: number;
+  configFileCount: number;
+  docFileCount: number;
+  sampleFiles: FileDescriptor[];
+}
+
+export interface ProjectProfile {
+  primaryLanguage: string;
+  languages: string[];
+  framework: string;
+  frameworks: string[];
+  buildSystem: string;
+  projectType: 'BACKEND' | 'FRONTEND' | 'FULL_STACK' | 'MOBILE' | 'LIBRARY' | 'CLI' | 'UNKNOWN';
+  testFrameworks: string[];
+  database: string;
+  databases: string[];
+  packageManager?: string;
+  entryPoints: string[];
+  detectedManifests: string[];
+  projectStructure?: ProjectStructure;
+  analysisCompleteness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  detectionWarnings: string[];
+  detectionEvidences: DetectionEvidence[];
+}
+
+export interface AnalysisPlan {
+  analyzers: string[];
+  rationale: Record<string, string>;
+}
+
+export interface AnalysisResponse {
+  id: string;
+  projectId: string;
+  releaseId: string;
+  runNumber: number;
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  projectProfile: ProjectProfile;
+  analysisPlan: AnalysisPlan;
+  findings: Finding[];
+  categoryScores?: Record<string, number>;
+  readinessScore?: number;
+  warnings: string[];
+  message: string;
+}
+
+// Legacy UI mock interfaces preserved for backwards compatibility
 export interface CategoryScore {
   category: FindingCategory;
   score: number;
@@ -14,7 +82,7 @@ export interface MetricComparison {
   name: string;
   previousValue: string | number;
   currentValue: string | number;
-  change: number; // positive is improvement, negative is regression
+  change: number;
   unit?: string;
   isPositiveChange: boolean;
 }

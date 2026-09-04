@@ -128,6 +128,22 @@ public class WorkspaceService {
         }
     }
 
+    public Path getWorkspacePath(String workspaceId) {
+        if (workspaceId == null || workspaceId.trim().isEmpty()) {
+            throw new InvalidArchiveException("Workspace ID is invalid or missing.");
+        }
+        Path base = Paths.get(workspaceBaseDir).toAbsolutePath().normalize();
+        Path targetDir = base.resolve(workspaceId).normalize();
+
+        if (!targetDir.startsWith(base)) {
+            throw new InvalidArchiveException("Invalid workspace path.");
+        }
+        if (!Files.exists(targetDir) || !Files.isDirectory(targetDir)) {
+            throw new InvalidArchiveException("Workspace path does not exist or has expired.");
+        }
+        return targetDir;
+    }
+
     public void cleanupWorkspace(String workspaceId) {
         if (workspaceId == null || workspaceId.trim().isEmpty()) return;
         try {

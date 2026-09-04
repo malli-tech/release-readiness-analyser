@@ -1,62 +1,48 @@
-package com.aireadiness.model;
+package com.aireadiness.dto.analysis;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.aireadiness.model.AnalysisPlan;
+import com.aireadiness.model.Finding;
+import com.aireadiness.model.ProjectProfile;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Document(collection = "analyses")
-public class Analysis {
+public class AnalysisResponse {
 
-    @Id
     private String id;
-
-    @Indexed
     private String projectId;
-
-    @Indexed
     private String releaseId;
-
-    @Indexed
-    private String userId;
-
-    private int runNumber = 1;
-
-    private String status = "CREATED"; // CREATED, DETECTING, DETECTED, READY_FOR_ANALYSIS, FAILED
-
-    private Instant startedAt = Instant.now();
-
+    private int runNumber;
+    private String status;
+    private Instant startedAt;
     private Instant completedAt;
-
     private ProjectProfile projectProfile;
-
     private AnalysisPlan analysisPlan;
-
-    private List<Finding> findings = new ArrayList<>();
-
-    private Map<String, Double> categoryScores = new HashMap<>();
-
-    private Map<String, Object> riskSummary = new HashMap<>();
-
+    private List<Finding> findings;
+    private Map<String, Double> categoryScores;
     private Double readinessScore;
+    private List<String> warnings;
+    private String message;
 
-    private List<String> warnings = new ArrayList<>();
-
-    public Analysis() {
+    public AnalysisResponse() {
     }
 
-    public Analysis(String projectId, String releaseId, String userId, int runNumber, String status) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, String message) {
+        this.id = id;
         this.projectId = projectId;
         this.releaseId = releaseId;
-        this.userId = userId;
         this.runNumber = runNumber;
         this.status = status;
-        this.startedAt = Instant.now();
+        this.startedAt = startedAt;
+        this.completedAt = completedAt;
+        this.projectProfile = projectProfile;
+        this.analysisPlan = analysisPlan;
+        this.findings = findings;
+        this.categoryScores = categoryScores;
+        this.readinessScore = readinessScore;
+        this.warnings = warnings;
+        this.message = message;
     }
 
     public String getId() {
@@ -81,14 +67,6 @@ public class Analysis {
 
     public void setReleaseId(String releaseId) {
         this.releaseId = releaseId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
 
     public int getRunNumber() {
@@ -155,14 +133,6 @@ public class Analysis {
         this.categoryScores = categoryScores;
     }
 
-    public Map<String, Object> getRiskSummary() {
-        return riskSummary;
-    }
-
-    public void setRiskSummary(Map<String, Object> riskSummary) {
-        this.riskSummary = riskSummary;
-    }
-
     public Double getReadinessScore() {
         return readinessScore;
     }
@@ -177,5 +147,13 @@ public class Analysis {
 
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
