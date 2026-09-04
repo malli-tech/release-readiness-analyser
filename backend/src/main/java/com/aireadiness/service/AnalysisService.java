@@ -1,5 +1,6 @@
 package com.aireadiness.service;
 
+import com.aireadiness.analyzer.quality.CodeQualityAnalyzer;
 import com.aireadiness.dto.analysis.AnalysisResponse;
 import com.aireadiness.exception.InvalidArchiveException;
 import com.aireadiness.exception.ResourceNotFoundException;
@@ -24,6 +25,7 @@ public class AnalysisService {
     private final UserRepository userRepository;
     private final WorkspaceService workspaceService;
     private final ProjectDetectionService projectDetectionService;
+    private final CodeQualityAnalyzer codeQualityAnalyzer;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -32,7 +34,8 @@ public class AnalysisService {
             UploadRepository uploadRepository,
             UserRepository userRepository,
             WorkspaceService workspaceService,
-            ProjectDetectionService projectDetectionService
+            ProjectDetectionService projectDetectionService,
+            CodeQualityAnalyzer codeQualityAnalyzer
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -41,6 +44,7 @@ public class AnalysisService {
         this.userRepository = userRepository;
         this.workspaceService = workspaceService;
         this.projectDetectionService = projectDetectionService;
+        this.codeQualityAnalyzer = codeQualityAnalyzer;
     }
 
     private User getAuthenticatedUser() {
@@ -90,21 +94,34 @@ public class AnalysisService {
         Optional<Analysis> latestAnalysisOpt = analysisRepository.findFirstByReleaseIdAndUserIdOrderByRunNumberDesc(releaseId, user.getId());
         int nextRunNumber = latestAnalysisOpt.map(a -> a.getRunNumber() + 1).orElse(1);
 
-        // 6. Build and persist Analysis record
-        Analysis analysis = new Analysis(project.getId(), release.getId(), user.getId(), nextRunNumber, "READY_FOR_ANALYSIS");
+        // 6. Build initial Analysis record
+        Analysis analysis = new Analysis(project.getId(), release.getId(), user.getId(), nextRunNumber, "ANALYZING");
         analysis.setProjectProfile(profile);
         analysis.setAnalysisPlan(plan);
-        analysis.setWarnings(profile.getDetectionWarnings());
+        List<String> combinedWarnings = new ArrayList<>(profile.getDetectionWarnings());
+
+        // 7. Execute Static Code Quality Analyzer (Part 8)
+        List<Finding> qualityFindings = codeQualityAnalyzer.analyze(workspacePath, profile, null, upload.getUploadMode(), combinedWarnings);
+
+        analysis.setFindings(qualityFindings);
+        analysis.setWarnings(combinedWarnings);
+        analysis.setStatus("COMPLETED");
         analysis.setCompletedAt(Instant.now());
 
         Analysis saved = analysisRepository.save(analysis);
 
-        // 7. Update release status
+        final String savedId = saved.getId();
+        if (saved.getFindings() != null) {
+            saved.getFindings().forEach(f -> f.setAnalysisId(savedId));
+            saved = analysisRepository.save(saved);
+        }
+
+        // 8. Update release status (remains READY_FOR_ANALYSIS until full multi-stage pipeline is complete in Parts 9-15)
         release.setStatus("READY_FOR_ANALYSIS");
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(saved, "Static project detection and analysis planning completed successfully.");
+        return mapToResponse(saved, "Static project detection and code quality analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {

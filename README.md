@@ -14,18 +14,32 @@ Uploaded project code is **never executed by the analyzer**. All detection and p
 - **Path Traversal Protection**: Ensures workspace path resolution strictly remains contained within isolated sandbox directories.
 - **Malformed Manifest Recovery**: Gracefully handles malformed XML/JSON/TOML manifests without crashing detection.
 
-### Technology Detection Engine
-- **Languages**: Java, TypeScript, JavaScript, Python, Go, C#, PHP.
-- **Frameworks**: Spring Boot, Next.js, React, Express, Django, Flask, FastAPI, ASP.NET Core, Laravel, Symfony.
-- **Build Systems & Package Managers**: Maven, Gradle, npm, yarn, pnpm, pip, poetry, pipenv, Go Modules, Composer, MSBuild.
-- **Testing Frameworks**: JUnit, Mockito, Jest, Vitest, PyTest, unittest, Go test (`_test.go`), xUnit, NUnit, MSTest, PHPUnit.
-- **Databases**: MongoDB, PostgreSQL, MySQL, SQLite, Redis.
+---
 
-### Analysis Completeness & Mode Handling
-- **COMPLETE_PROJECT**: Evaluates project structure and alerts if expected components (e.g. tests) are absent.
-- **SELECTED_CONTENT**: Marks completeness as `PARTIAL` and generates contextual warnings without making false non-presence claims about un-uploaded project modules.
+## Part 8 Capabilities: Static Code Quality Analyzer
+
+Part 8 implements a **100% static, rule-based Code Quality Analyzer** that evaluates source code maintainability, complexity, and code smells without executing uploaded code.
+
+### 10 Implemented Quality Rules
+1. `CODE_QUALITY_LONG_METHOD`: Detects methods/functions > 100 non-blank lines (`MEDIUM`).
+2. `CODE_QUALITY_LARGE_CLASS`: Detects classes/types > 500 lines (`MEDIUM`).
+3. `CODE_QUALITY_TOO_MANY_PARAMETERS`: Detects functions with > 6 parameters (`MEDIUM`).
+4. `CODE_QUALITY_DEEP_NESTING`: Detects control flow nesting > 4 levels (`MEDIUM`).
+5. `CODE_QUALITY_TODO_FIXME`: Detects explicit TODO/FIXME/XXX markers (`LOW`).
+6. `CODE_QUALITY_EMPTY_EXCEPTION_HANDLER`: Detects empty catch/except blocks (`HIGH`).
+7. `CODE_QUALITY_MAGIC_NUMBER`: Detects suspicious hardcoded numeric literals (`LOW`).
+8. `CODE_QUALITY_COMMENTED_OUT_CODE`: Detects blocks of commented-out source code (`LOW`).
+9. `CODE_QUALITY_DUPLICATED_CODE`: Detects repeated sequences of ≥ 6 lines (`MEDIUM`).
+10. `CODE_QUALITY_POOR_NAMING`: Detects poor single-letter variable names outside loop/coordinate contexts (`LOW`).
+
+### Safety, Limits & Protections
+- **Multi-Language Support**: Java, JavaScript, TypeScript, Python, Go, C#, PHP.
+- **Configurable Resource Limits**: Enforces 2 MB file limit, 50 MB total source content limit, 5,000 max source files limit, 2,000 max total findings limit. Over-limit files are skipped with warnings.
+- **Secret Redaction**: Redacts accidental passwords/tokens/credentials in evidence snippets (`***REDACTED***`).
+- **Finding Deduplication**: Unique identity mapping (`analysisId:ruleId:filePath:lineNumber`).
+- **Selected-Content Semantics**: Preserves `SELECTED_CONTENT` notice without false non-presence claims for missing files.
 
 ### API Endpoints
-- `POST /api/releases/{releaseId}/analysis`: Start static project detection & plan generation for a release.
-- `GET /api/releases/{releaseId}/analysis`: Retrieve the latest analysis profile for a release.
-- `GET /api/analyses/{analysisId}`: Retrieve a specific analysis record by ID.
+- `POST /api/releases/{releaseId}/analysis`: Performs static project detection and runs Code Quality analysis. Returns `201 Created` with populated `findings[]`.
+- `GET /api/releases/{releaseId}/analysis`: Retrieves the latest analysis and findings for a release.
+- `GET /api/analyses/{analysisId}`: Retrieves a specific analysis record by ID.

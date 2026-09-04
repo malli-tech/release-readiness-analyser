@@ -5,23 +5,33 @@ export type FindingCategory =
   | 'Testing'
   | 'Code Quality'
   | 'Dependencies'
-  | 'Performance';
+  | 'Performance'
+  | 'CODE_QUALITY'
+  | 'TESTING'
+  | 'DEPENDENCY'
+  | 'SECURITY'
+  | 'PERFORMANCE';
 
 export interface Finding {
-  id: string;
-  releaseId: string;
+  id?: string;
+  analysisId?: string;
+  releaseId?: string;
   title: string;
   category: FindingCategory;
   severity: FindingSeverity;
   filePath: string;
-  lineNumber: number;
+  lineNumber?: number;
   description: string;
-  codeSnippet: string;
-  highlightedLine: number;
-  whatIsWrong: string;
-  whyItMatters: string;
-  whatToReview: string;
-  recommendedAction: string;
-  aiExplanation: string;
-  ruleId: string;
+  codeSnippet?: string;
+  highlightedLine?: number;
+  whatIsWrong?: string;
+  whyItMatters?: string;
+  whatToReview?: string;
+  recommendedAction?: string;
+  aiExplanation?: string;
+  ruleId?: string;
+  evidence?: string;
+  confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  impact?: string;
+  status?: string;
 }
