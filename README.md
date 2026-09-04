@@ -43,3 +43,32 @@ Part 8 implements a **100% static, rule-based Code Quality Analyzer** that evalu
 - `POST /api/releases/{releaseId}/analysis`: Performs static project detection and runs Code Quality analysis. Returns `201 Created` with populated `findings[]`.
 - `GET /api/releases/{releaseId}/analysis`: Retrieves the latest analysis and findings for a release.
 - `GET /api/analyses/{analysisId}`: Retrieves a specific analysis record by ID.
+
+---
+
+## Part 10 Capabilities: Static Dependency Analyzer
+
+Part 10 implements a **100% static Dependency Analyzer** evaluating manifest declarations and dependency-management quality across 9 developer ecosystems without executing project code, invoking package managers, or accessing external vulnerability databases.
+
+### Supported Ecosystems & Manifests
+- **Java / Maven**: `pom.xml` (DOM XML parsing, XXE protection, static property resolution)
+- **Java / Gradle**: `build.gradle`, `build.gradle.kts`, `settings.gradle`
+- **JavaScript / TypeScript / npm / Yarn / pnpm**: `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+- **Python**: `requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `Pipfile`, `poetry.lock`
+- **Go**: `go.mod`, `go.sum`
+- **C# / .NET**: `*.csproj`, `packages.config`, `Directory.Packages.props`
+- **PHP / Composer**: `composer.json`, `composer.lock`
+
+### Implemented Dependency Rules
+1. `DEPENDENCY_NO_MANIFEST`: Detects projects with source code but missing dependency manifests (`MEDIUM`, `COMPLETE_PROJECT` mode).
+2. `DEPENDENCY_UNPINNED_VERSION`: Detects unpinned dependencies without explicit version constraints (`MEDIUM`).
+3. `DEPENDENCY_BROAD_VERSION_RANGE`: Detects overly broad version declarations e.g. `*`, `latest`, `>=1.0.0` (`LOW`).
+4. `DEPENDENCY_DUPLICATE`: Detects duplicate dependency declarations in the same manifest and scope (`MEDIUM`).
+5. `DEPENDENCY_VERSION_INCONSISTENCY`: Detects inconsistent versions declared across multiple module manifests (`MEDIUM`).
+6. `DEPENDENCY_MANIFEST_WARNING`: Summary-level warning for malformed or partially parsed manifests (`LOW`).
+
+### Absolute Security & Vulnerability Boundary
+- **Zero Process Execution**: No invocation of `mvn`, `gradle`, `npm`, `yarn`, `pnpm`, `pip`, `poetry`, `go`, `dotnet`, or `composer`. No `ProcessBuilder` or `Runtime.exec()`.
+- **Zero Registry / Network Access**: Does not contact npm registry, Maven Central, PyPI, Go proxies, NuGet, or Packagist.
+- **Zero CVE Vulnerability Queries**: Does not query OSV, NVD, Snyk, Sonatype, or OWASP. Measures static dependency management quality, not CVE security status.
+

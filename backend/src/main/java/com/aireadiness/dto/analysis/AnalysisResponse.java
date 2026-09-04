@@ -1,6 +1,7 @@
 package com.aireadiness.dto.analysis;
 
 import com.aireadiness.model.AnalysisPlan;
+import com.aireadiness.model.DependencySummary;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.ProjectProfile;
 import com.aireadiness.model.TestingSummary;
@@ -25,6 +26,7 @@ public class AnalysisResponse {
     private Double readinessScore;
     private List<String> warnings;
     private TestingSummary testingSummary;
+    private DependencySummary dependencySummary;
     private String message;
 
     public AnalysisResponse() {
@@ -50,6 +52,11 @@ public class AnalysisResponse {
     public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, String message) {
         this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, message);
         this.testingSummary = testingSummary;
+    }
+
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, String message) {
+        this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, testingSummary, message);
+        this.dependencySummary = dependencySummary;
     }
 
     public String getId() {
@@ -170,5 +177,13 @@ public class AnalysisResponse {
 
     public void setTestingSummary(TestingSummary testingSummary) {
         this.testingSummary = testingSummary;
+    }
+
+    public DependencySummary getDependencySummary() {
+        return dependencySummary;
+    }
+
+    public void setDependencySummary(DependencySummary dependencySummary) {
+        this.dependencySummary = dependencySummary;
     }
 }

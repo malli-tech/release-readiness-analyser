@@ -68,6 +68,21 @@ export interface TestingSummary {
   disclaimer: string;
 }
 
+export interface DependencySummary {
+  manifestFiles: string[];
+  detectedPackageManagers: string[];
+  dependencyCount: number;
+  directDependencyCount: number;
+  devDependencyCount: number;
+  unpinnedDependencyCount: number;
+  broadVersionDependencyCount: number;
+  duplicateDependencyCount: number;
+  dependencyManagementWarnings: string[];
+  dependencyCompleteness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  dependencyWarnings: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -83,6 +98,7 @@ export interface AnalysisResponse {
   readinessScore?: number;
   warnings: string[];
   testingSummary?: TestingSummary;
+  dependencySummary?: DependencySummary;
   message: string;
 }
 

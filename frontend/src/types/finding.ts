@@ -9,6 +9,7 @@ export type FindingCategory =
   | 'CODE_QUALITY'
   | 'TESTING'
   | 'DEPENDENCY'
+  | 'DEPENDENCIES'
   | 'SECURITY'
   | 'PERFORMANCE';
 

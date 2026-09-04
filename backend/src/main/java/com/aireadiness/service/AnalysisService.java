@@ -1,5 +1,6 @@
 package com.aireadiness.service;
 
+import com.aireadiness.analyzer.dependency.DependencyAnalyzer;
 import com.aireadiness.analyzer.quality.CodeQualityAnalyzer;
 import com.aireadiness.analyzer.testing.TestingAnalyzer;
 import com.aireadiness.dto.analysis.AnalysisResponse;
@@ -28,6 +29,7 @@ public class AnalysisService {
     private final ProjectDetectionService projectDetectionService;
     private final CodeQualityAnalyzer codeQualityAnalyzer;
     private final TestingAnalyzer testingAnalyzer;
+    private final DependencyAnalyzer dependencyAnalyzer;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -38,7 +40,8 @@ public class AnalysisService {
             WorkspaceService workspaceService,
             ProjectDetectionService projectDetectionService,
             CodeQualityAnalyzer codeQualityAnalyzer,
-            TestingAnalyzer testingAnalyzer
+            TestingAnalyzer testingAnalyzer,
+            DependencyAnalyzer dependencyAnalyzer
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -49,6 +52,7 @@ public class AnalysisService {
         this.projectDetectionService = projectDetectionService;
         this.codeQualityAnalyzer = codeQualityAnalyzer;
         this.testingAnalyzer = testingAnalyzer;
+        this.dependencyAnalyzer = dependencyAnalyzer;
     }
 
     private User getAuthenticatedUser() {
@@ -124,6 +128,15 @@ public class AnalysisService {
             saved.setTestingSummary(testingAnalyzer.getLastSummary());
         }
 
+        // 9. Execute Static Dependency Analyzer (Part 10)
+        if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(dependencyAnalyzer.getType())) {
+            List<Finding> dependencyFindings = dependencyAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+            if (dependencyFindings != null) {
+                allFindings.addAll(dependencyFindings);
+            }
+            saved.setDependencySummary(dependencyAnalyzer.getLastSummary());
+        }
+
         allFindings.forEach(f -> f.setAnalysisId(saved.getId()));
         saved.setFindings(allFindings);
         saved.setWarnings(combinedWarnings);
@@ -132,12 +145,12 @@ public class AnalysisService {
 
         Analysis finalSaved = analysisRepository.save(saved);
 
-        // 9. Update release status (remains READY_FOR_ANALYSIS until full multi-stage pipeline is complete in Parts 9-15)
+        // Keep release READY_FOR_ANALYSIS until the complete analysis pipeline is implemented.
         release.setStatus("READY_FOR_ANALYSIS");
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(finalSaved, "Static project detection, code quality, and testing analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, testing, and dependency analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
@@ -175,6 +188,7 @@ public class AnalysisService {
                 analysis.getReadinessScore(),
                 analysis.getWarnings(),
                 analysis.getTestingSummary(),
+                analysis.getDependencySummary(),
                 message
         );
     }

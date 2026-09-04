@@ -49,6 +49,8 @@ public class Analysis {
 
     private TestingSummary testingSummary;
 
+    private DependencySummary dependencySummary;
+
     public Analysis() {
     }
 
@@ -187,5 +189,13 @@ public class Analysis {
 
     public void setTestingSummary(TestingSummary testingSummary) {
         this.testingSummary = testingSummary;
+    }
+
+    public DependencySummary getDependencySummary() {
+        return dependencySummary;
+    }
+
+    public void setDependencySummary(DependencySummary dependencySummary) {
+        this.dependencySummary = dependencySummary;
     }
 }

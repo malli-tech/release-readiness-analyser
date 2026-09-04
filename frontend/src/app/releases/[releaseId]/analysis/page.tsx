@@ -71,6 +71,7 @@ export default function ReleaseAnalysisPage() {
   const plan = analysis?.analysisPlan;
   const structure = profile?.projectStructure;
   const testingSummary = analysis?.testingSummary;
+  const dependencySummary = analysis?.dependencySummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -79,7 +80,10 @@ export default function ReleaseAnalysisPage() {
 
   const filteredFindings = findings.filter((f) => {
     const matchesSev = severityFilter === 'ALL' || f.severity === severityFilter;
-    const matchesCat = categoryFilter === 'ALL' || f.category === categoryFilter;
+    const matchesCat =
+      categoryFilter === 'ALL' ||
+      f.category === categoryFilter ||
+      (categoryFilter === 'DEPENDENCIES' && (f.category === 'DEPENDENCY' || f.category === 'DEPENDENCIES'));
     return matchesSev && matchesCat;
   });
 
@@ -103,10 +107,10 @@ export default function ReleaseAnalysisPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      Code Quality & Detection Analyzer
+                      Code Quality, Testing & Dependency Analyzer
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                      Static project inspection, code quality pattern evaluation, and rule findings.
+                      Static project inspection, code quality pattern evaluation, testing structure analysis, and manifest dependency management assessment.
                     </p>
                   </div>
                   {analysis && (
@@ -309,6 +313,82 @@ export default function ReleaseAnalysisPage() {
                         </p>
                       </CardContent>
                     </Card>
+
+                    {/* Static Dependency Summary Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-purple-600" />
+                            <CardTitle className="text-sm">Dependency Analysis Summary</CardTitle>
+                          </div>
+                          {dependencySummary?.dependencyCompleteness && (
+                            <Badge
+                              variant={
+                                dependencySummary.dependencyCompleteness === 'COMPLETE'
+                                  ? 'ready'
+                                  : dependencySummary.dependencyCompleteness === 'PARTIAL'
+                                  ? 'warning'
+                                  : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              {dependencySummary.dependencyCompleteness}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Total Deps</span>
+                            <span className="text-base font-bold text-slate-900">{dependencySummary?.dependencyCount ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Direct Deps</span>
+                            <span className="text-base font-bold text-slate-900">{dependencySummary?.directDependencyCount ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100">
+                            <span className="text-[10px] text-purple-700 font-medium block">Dev Deps</span>
+                            <span className="text-base font-bold text-purple-700">{dependencySummary?.devDependencyCount ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
+                            <span className="text-[10px] text-amber-700 font-medium block">Unpinned</span>
+                            <span className="text-base font-bold text-amber-700">{dependencySummary?.unpinnedDependencyCount ?? 0}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-[11px] p-2.5 bg-slate-50 rounded-xl border border-slate-200 font-mono">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Broad Range</span>
+                            <span className="font-bold text-amber-700">{dependencySummary?.broadVersionDependencyCount ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Duplicates</span>
+                            <span className="font-bold text-rose-700">{dependencySummary?.duplicateDependencyCount ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Manifests</span>
+                            <span className="font-bold text-slate-800">{dependencySummary?.manifestFiles?.length ?? 0}</span>
+                          </div>
+                        </div>
+
+                        {dependencySummary?.detectedPackageManagers && dependencySummary.detectedPackageManagers.length > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-slate-400 text-[11px]">Ecosystems:</span>
+                            {dependencySummary.detectedPackageManagers.map((pm, idx) => (
+                              <Badge key={idx} variant="info" size="sm">
+                                {pm}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-[11px] text-slate-400 italic">
+                          {dependencySummary?.disclaimer || 'Static dependency analysis does not evaluate runtime vulnerabilities or download remote packages.'}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {/* Findings List Section */}
@@ -322,7 +402,7 @@ export default function ReleaseAnalysisPage() {
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           {/* Category Filters */}
                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-                            {['ALL', 'CODE_QUALITY', 'TESTING'].map((cat) => (
+                            {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES'].map((cat) => (
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
@@ -574,7 +654,7 @@ export default function ReleaseAnalysisPage() {
                             <div key={idx} className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100 space-y-1">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-indigo-950 font-mono block">{analyzerKey}</span>
-                                {analyzerKey === 'CODE_QUALITY' && (
+                                {(analyzerKey === 'CODE_QUALITY' || analyzerKey === 'TESTING' || analyzerKey === 'DEPENDENCIES') && (
                                   <Badge variant="ready" size="sm">Completed</Badge>
                                 )}
                               </div>
