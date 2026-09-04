@@ -51,6 +51,23 @@ export interface AnalysisPlan {
   rationale: Record<string, string>;
 }
 
+export interface TestingSummary {
+  testFiles: number;
+  sourceFiles: number;
+  testPresenceRatio: number;
+  detectedFrameworks: string[];
+  testsDetected: number;
+  assertionsDetected: number;
+  skippedTestsDetected: number;
+  emptyTestsDetected: number;
+  todoTestsDetected: number;
+  sourceFilesWithoutTests: number;
+  testFilesWithoutObviousAssertions: number;
+  testingCompleteness: 'STRONG' | 'MODERATE' | 'WEAK' | 'UNKNOWN' | 'PARTIAL';
+  testingWarnings: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -65,6 +82,7 @@ export interface AnalysisResponse {
   categoryScores?: Record<string, number>;
   readinessScore?: number;
   warnings: string[];
+  testingSummary?: TestingSummary;
   message: string;
 }
 

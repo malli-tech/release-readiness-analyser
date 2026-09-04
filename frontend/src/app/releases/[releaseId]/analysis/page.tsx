@@ -37,6 +37,7 @@ export default function ReleaseAnalysisPage() {
   const releaseId = params?.releaseId as string;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
   const { loading, error, analysis, startAnalysis, getLatestAnalysis } = useAnalysis();
   const [initializing, setInitializing] = useState(true);
@@ -69,6 +70,7 @@ export default function ReleaseAnalysisPage() {
   const profile = analysis?.projectProfile;
   const plan = analysis?.analysisPlan;
   const structure = profile?.projectStructure;
+  const testingSummary = analysis?.testingSummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -76,8 +78,9 @@ export default function ReleaseAnalysisPage() {
   const lowFindings = findings.filter((f) => f.severity === 'LOW');
 
   const filteredFindings = findings.filter((f) => {
-    if (severityFilter === 'ALL') return true;
-    return f.severity === severityFilter;
+    const matchesSev = severityFilter === 'ALL' || f.severity === severityFilter;
+    const matchesCat = categoryFilter === 'ALL' || f.category === categoryFilter;
+    return matchesSev && matchesCat;
   });
 
   return (
@@ -197,35 +200,116 @@ export default function ReleaseAnalysisPage() {
                     </div>
                   </div>
 
-                  {/* Code Quality Summary Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
-                        <Code2 className="w-4 h-4 text-indigo-600" />
-                        <CardTitle className="text-sm">Code Quality Findings Summary</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                          <span className="text-[11px] text-slate-400 font-medium block">Total Findings</span>
-                          <span className="text-lg font-bold text-slate-900">{findings.length}</span>
+                  {/* Code Quality & Testing Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Findings Summary Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <Code2 className="w-4 h-4 text-indigo-600" />
+                          <CardTitle className="text-sm">Static Findings Overview</CardTitle>
                         </div>
-                        <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
-                          <span className="text-[11px] text-rose-600 font-medium block">High Severity</span>
-                          <span className="text-lg font-bold text-rose-700">{highFindings.length}</span>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[11px] text-slate-400 font-medium block">Total Findings</span>
+                            <span className="text-lg font-bold text-slate-900">{findings.length}</span>
+                          </div>
+                          <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
+                            <span className="text-[11px] text-rose-600 font-medium block">High Severity</span>
+                            <span className="text-lg font-bold text-rose-700">{highFindings.length}</span>
+                          </div>
+                          <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                            <span className="text-[11px] text-amber-600 font-medium block">Medium Severity</span>
+                            <span className="text-lg font-bold text-amber-700">{mediumFindings.length}</span>
+                          </div>
+                          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <span className="text-[11px] text-blue-600 font-medium block">Low Severity</span>
+                            <span className="text-lg font-bold text-blue-700">{lowFindings.length}</span>
+                          </div>
                         </div>
-                        <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
-                          <span className="text-[11px] text-amber-600 font-medium block">Medium Severity</span>
-                          <span className="text-lg font-bold text-amber-700">{mediumFindings.length}</span>
+                      </CardContent>
+                    </Card>
+
+                    {/* Static Testing Summary Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileCode2 className="w-4 h-4 text-emerald-600" />
+                            <CardTitle className="text-sm">Static Testing Summary</CardTitle>
+                          </div>
+                          {testingSummary?.testingCompleteness && (
+                            <Badge
+                              variant={
+                                testingSummary.testingCompleteness === 'STRONG'
+                                  ? 'ready'
+                                  : testingSummary.testingCompleteness === 'MODERATE' || testingSummary.testingCompleteness === 'PARTIAL'
+                                  ? 'warning'
+                                  : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              {testingSummary.testingCompleteness}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                          <span className="text-[11px] text-blue-600 font-medium block">Low Severity</span>
-                          <span className="text-lg font-bold text-blue-700">{lowFindings.length}</span>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Test Files</span>
+                            <span className="text-base font-bold text-slate-900">{testingSummary?.testFiles ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Source Files</span>
+                            <span className="text-base font-bold text-slate-900">{testingSummary?.sourceFiles ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] text-emerald-700 font-medium block">Presence Ratio</span>
+                            <span className="text-base font-bold text-emerald-700">
+                              {((testingSummary?.testPresenceRatio ?? 0) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                            <span className="text-[10px] text-indigo-700 font-medium block">Tests Counted</span>
+                            <span className="text-base font-bold text-indigo-700">{testingSummary?.testsDetected ?? 0}</span>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+
+                        <div className="grid grid-cols-3 gap-2 text-[11px] p-2.5 bg-slate-50 rounded-xl border border-slate-200 font-mono">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Assertions</span>
+                            <span className="font-bold text-slate-800">{testingSummary?.assertionsDetected ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Skipped</span>
+                            <span className="font-bold text-amber-700">{testingSummary?.skippedTestsDetected ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Empty</span>
+                            <span className="font-bold text-rose-700">{testingSummary?.emptyTestsDetected ?? 0}</span>
+                          </div>
+                        </div>
+
+                        {testingSummary?.detectedFrameworks && testingSummary.detectedFrameworks.length > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-slate-400 text-[11px]">Frameworks:</span>
+                            {testingSummary.detectedFrameworks.map((fw, idx) => (
+                              <Badge key={idx} variant="info" size="sm">
+                                {fw}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-[11px] text-slate-400 italic">
+                          {testingSummary?.disclaimer || 'Static test presence is not runtime code coverage.'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                   {/* Findings List Section */}
                   <Card>
@@ -235,20 +319,40 @@ export default function ReleaseAnalysisPage() {
                           <Filter className="w-4 h-4 text-indigo-600" />
                           <CardTitle className="text-sm">Static Findings List ({filteredFindings.length})</CardTitle>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
-                            <button
-                              key={sev}
-                              onClick={() => setSeverityFilter(sev)}
-                              className={`px-2.5 py-1 rounded-lg font-semibold transition ${
-                                severityFilter === sev
-                                  ? 'bg-indigo-600 text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
-                            >
-                              {sev}
-                            </button>
-                          ))}
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {/* Category Filters */}
+                          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            {['ALL', 'CODE_QUALITY', 'TESTING'].map((cat) => (
+                              <button
+                                key={cat}
+                                onClick={() => setCategoryFilter(cat)}
+                                className={`px-2 py-0.5 rounded-md font-semibold text-[11px] transition ${
+                                  categoryFilter === cat
+                                    ? 'bg-white text-slate-900 shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                {cat === 'ALL' ? 'All Categories' : cat}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Severity Filters */}
+                          <div className="flex items-center gap-1">
+                            {['ALL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
+                              <button
+                                key={sev}
+                                onClick={() => setSeverityFilter(sev)}
+                                className={`px-2 py-1 rounded-lg font-semibold text-[11px] transition ${
+                                  severityFilter === sev
+                                    ? 'bg-indigo-600 text-white shadow-xs'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                              >
+                                {sev}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
@@ -258,7 +362,7 @@ export default function ReleaseAnalysisPage() {
                           <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
                           <p className="text-xs font-semibold text-slate-700">No findings for this filter</p>
                           <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                            No code-quality rule violations were detected matching the selected criteria.
+                            No static findings were detected matching the selected criteria.
                           </p>
                         </div>
                       ) : (
@@ -268,7 +372,7 @@ export default function ReleaseAnalysisPage() {
                             className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition space-y-2.5"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Badge
                                   variant={
                                     finding.severity === 'HIGH'
@@ -280,6 +384,9 @@ export default function ReleaseAnalysisPage() {
                                   size="sm"
                                 >
                                   {finding.severity}
+                                </Badge>
+                                <Badge variant="neutral" size="sm">
+                                  {finding.category || 'ANALYSIS'}
                                 </Badge>
                                 <h4 className="text-xs font-bold text-slate-900">{finding.title}</h4>
                               </div>

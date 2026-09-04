@@ -47,6 +47,8 @@ public class Analysis {
 
     private List<String> warnings = new ArrayList<>();
 
+    private TestingSummary testingSummary;
+
     public Analysis() {
     }
 
@@ -177,5 +179,13 @@ public class Analysis {
 
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
+    }
+
+    public TestingSummary getTestingSummary() {
+        return testingSummary;
+    }
+
+    public void setTestingSummary(TestingSummary testingSummary) {
+        this.testingSummary = testingSummary;
     }
 }

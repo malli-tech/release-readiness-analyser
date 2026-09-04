@@ -1,6 +1,7 @@
 package com.aireadiness.service;
 
 import com.aireadiness.analyzer.quality.CodeQualityAnalyzer;
+import com.aireadiness.analyzer.testing.TestingAnalyzer;
 import com.aireadiness.dto.analysis.AnalysisResponse;
 import com.aireadiness.exception.InvalidArchiveException;
 import com.aireadiness.exception.ResourceNotFoundException;
@@ -26,6 +27,7 @@ public class AnalysisService {
     private final WorkspaceService workspaceService;
     private final ProjectDetectionService projectDetectionService;
     private final CodeQualityAnalyzer codeQualityAnalyzer;
+    private final TestingAnalyzer testingAnalyzer;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -35,7 +37,8 @@ public class AnalysisService {
             UserRepository userRepository,
             WorkspaceService workspaceService,
             ProjectDetectionService projectDetectionService,
-            CodeQualityAnalyzer codeQualityAnalyzer
+            CodeQualityAnalyzer codeQualityAnalyzer,
+            TestingAnalyzer testingAnalyzer
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -45,6 +48,7 @@ public class AnalysisService {
         this.workspaceService = workspaceService;
         this.projectDetectionService = projectDetectionService;
         this.codeQualityAnalyzer = codeQualityAnalyzer;
+        this.testingAnalyzer = testingAnalyzer;
     }
 
     private User getAuthenticatedUser() {
@@ -98,30 +102,42 @@ public class AnalysisService {
         Analysis analysis = new Analysis(project.getId(), release.getId(), user.getId(), nextRunNumber, "ANALYZING");
         analysis.setProjectProfile(profile);
         analysis.setAnalysisPlan(plan);
-        List<String> combinedWarnings = new ArrayList<>(profile.getDetectionWarnings());
-
-        // 7. Execute Static Code Quality Analyzer (Part 8)
-        List<Finding> qualityFindings = codeQualityAnalyzer.analyze(workspacePath, profile, null, upload.getUploadMode(), combinedWarnings);
-
-        analysis.setFindings(qualityFindings);
-        analysis.setWarnings(combinedWarnings);
-        analysis.setStatus("COMPLETED");
-        analysis.setCompletedAt(Instant.now());
-
         Analysis saved = analysisRepository.save(analysis);
 
-        final String savedId = saved.getId();
-        if (saved.getFindings() != null) {
-            saved.getFindings().forEach(f -> f.setAnalysisId(savedId));
-            saved = analysisRepository.save(saved);
+        List<String> combinedWarnings = new ArrayList<>(profile.getDetectionWarnings());
+        List<Finding> allFindings = new ArrayList<>();
+
+        // 7. Execute Static Code Quality Analyzer (Part 8)
+        if (plan.getAnalyzers() != null && plan.getAnalyzers().contains("CODE_QUALITY")) {
+            List<Finding> qualityFindings = codeQualityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+            if (qualityFindings != null) {
+                allFindings.addAll(qualityFindings);
+            }
         }
 
-        // 8. Update release status (remains READY_FOR_ANALYSIS until full multi-stage pipeline is complete in Parts 9-15)
+        // 8. Execute Static Testing Analyzer (Part 9)
+        if (plan.getAnalyzers() != null && plan.getAnalyzers().contains("TESTING")) {
+            List<Finding> testingFindings = testingAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+            if (testingFindings != null) {
+                allFindings.addAll(testingFindings);
+            }
+            saved.setTestingSummary(testingAnalyzer.getLastSummary());
+        }
+
+        allFindings.forEach(f -> f.setAnalysisId(saved.getId()));
+        saved.setFindings(allFindings);
+        saved.setWarnings(combinedWarnings);
+        saved.setStatus("COMPLETED");
+        saved.setCompletedAt(Instant.now());
+
+        Analysis finalSaved = analysisRepository.save(saved);
+
+        // 9. Update release status (remains READY_FOR_ANALYSIS until full multi-stage pipeline is complete in Parts 9-15)
         release.setStatus("READY_FOR_ANALYSIS");
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(saved, "Static project detection and code quality analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, and testing analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
@@ -158,6 +174,7 @@ public class AnalysisService {
                 analysis.getCategoryScores(),
                 analysis.getReadinessScore(),
                 analysis.getWarnings(),
+                analysis.getTestingSummary(),
                 message
         );
     }

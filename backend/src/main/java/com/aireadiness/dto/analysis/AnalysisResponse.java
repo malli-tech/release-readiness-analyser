@@ -3,6 +3,7 @@ package com.aireadiness.dto.analysis;
 import com.aireadiness.model.AnalysisPlan;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.ProjectProfile;
+import com.aireadiness.model.TestingSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,6 +24,7 @@ public class AnalysisResponse {
     private Map<String, Double> categoryScores;
     private Double readinessScore;
     private List<String> warnings;
+    private TestingSummary testingSummary;
     private String message;
 
     public AnalysisResponse() {
@@ -43,6 +45,11 @@ public class AnalysisResponse {
         this.readinessScore = readinessScore;
         this.warnings = warnings;
         this.message = message;
+    }
+
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, String message) {
+        this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, message);
+        this.testingSummary = testingSummary;
     }
 
     public String getId() {
@@ -155,5 +162,13 @@ public class AnalysisResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public TestingSummary getTestingSummary() {
+        return testingSummary;
+    }
+
+    public void setTestingSummary(TestingSummary testingSummary) {
+        this.testingSummary = testingSummary;
     }
 }
