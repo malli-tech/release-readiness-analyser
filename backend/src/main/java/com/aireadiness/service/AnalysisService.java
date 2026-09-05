@@ -34,6 +34,7 @@ public class AnalysisService {
     private final DependencyAnalyzer dependencyAnalyzer;
     private final SecurityAnalyzer securityAnalyzer;
     private final PerformanceAnalyzer performanceAnalyzer;
+    private final com.aireadiness.risk.RiskEngine riskEngine;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -47,7 +48,8 @@ public class AnalysisService {
             TestingAnalyzer testingAnalyzer,
             DependencyAnalyzer dependencyAnalyzer,
             SecurityAnalyzer securityAnalyzer,
-            PerformanceAnalyzer performanceAnalyzer
+            PerformanceAnalyzer performanceAnalyzer,
+            com.aireadiness.risk.RiskEngine riskEngine
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -61,6 +63,7 @@ public class AnalysisService {
         this.dependencyAnalyzer = dependencyAnalyzer;
         this.securityAnalyzer = securityAnalyzer;
         this.performanceAnalyzer = performanceAnalyzer;
+        this.riskEngine = riskEngine;
     }
 
     private User getAuthenticatedUser() {
@@ -223,9 +226,13 @@ public class AnalysisService {
                 combinedWarnings
         );
 
+        // 13. PART 14 — RISK ENGINE
+        RiskSummary riskSummary = riskEngine.calculateRisk(unifiedSummary, unifiedFindings, profile);
+
         saved.setFindings(unifiedFindings);
         saved.setWarnings(combinedWarnings);
         saved.setUnifiedAnalysisSummary(unifiedSummary);
+        saved.setRiskSummary(riskSummary);
         saved.setStatus("COMPLETED");
         saved.setCompletedAt(Instant.now());
 
@@ -449,6 +456,7 @@ public class AnalysisService {
                 message
         );
         response.setUnifiedAnalysisSummary(analysis.getUnifiedAnalysisSummary());
+        response.setRiskSummary(analysis.getRiskSummary());
         return response;
     }
 }

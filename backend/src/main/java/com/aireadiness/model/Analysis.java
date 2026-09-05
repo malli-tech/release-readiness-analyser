@@ -41,7 +41,7 @@ public class Analysis {
 
     private Map<String, Double> categoryScores = new HashMap<>();
 
-    private Map<String, Object> riskSummary = new HashMap<>();
+    private RiskSummary riskSummary;
 
     private Double readinessScore;
 
@@ -163,11 +163,11 @@ public class Analysis {
         this.categoryScores = categoryScores;
     }
 
-    public Map<String, Object> getRiskSummary() {
+    public RiskSummary getRiskSummary() {
         return riskSummary;
     }
 
-    public void setRiskSummary(Map<String, Object> riskSummary) {
+    public void setRiskSummary(RiskSummary riskSummary) {
         this.riskSummary = riskSummary;
     }
 

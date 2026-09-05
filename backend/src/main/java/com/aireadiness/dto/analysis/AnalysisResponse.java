@@ -5,6 +5,7 @@ import com.aireadiness.model.DependencySummary;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.PerformanceSummary;
 import com.aireadiness.model.ProjectProfile;
+import com.aireadiness.model.RiskSummary;
 import com.aireadiness.model.SecuritySummary;
 import com.aireadiness.model.TestingSummary;
 import com.aireadiness.model.UnifiedAnalysisSummary;
@@ -26,6 +27,7 @@ public class AnalysisResponse {
     private AnalysisPlan analysisPlan;
     private List<Finding> findings;
     private Map<String, Double> categoryScores;
+    private RiskSummary riskSummary;
     private Double readinessScore;
     private List<String> warnings;
     private TestingSummary testingSummary;
@@ -226,5 +228,13 @@ public class AnalysisResponse {
 
     public void setUnifiedAnalysisSummary(UnifiedAnalysisSummary unifiedAnalysisSummary) {
         this.unifiedAnalysisSummary = unifiedAnalysisSummary;
+    }
+
+    public RiskSummary getRiskSummary() {
+        return riskSummary;
+    }
+
+    public void setRiskSummary(RiskSummary riskSummary) {
+        this.riskSummary = riskSummary;
     }
 }

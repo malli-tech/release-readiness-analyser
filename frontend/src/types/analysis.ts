@@ -133,6 +133,43 @@ export interface UnifiedAnalysisSummary {
   disclaimer: string;
 }
 
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN';
+
+export interface CategoryRisk {
+  category: string;
+  findingCount: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  infoFindings: number;
+  weightedRiskPoints: number;
+  riskLevel: RiskLevel;
+}
+
+export interface RiskFactor {
+  title: string;
+  description: string;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  impactCategory: string;
+}
+
+export interface RiskSummary {
+  overallRiskLevel: RiskLevel;
+  weightedRiskPoints: number;
+  baseRiskPoints: number;
+  totalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  infoFindings: number;
+  categoryRisk: Record<string, CategoryRisk>;
+  severityRisk: Record<string, number>;
+  riskFactors: RiskFactor[];
+  riskWarnings: string[];
+  completeness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  calculationVersion: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -152,6 +189,7 @@ export interface AnalysisResponse {
   securitySummary?: SecuritySummary;
   performanceSummary?: PerformanceSummary;
   unifiedAnalysisSummary?: UnifiedAnalysisSummary;
+  riskSummary?: RiskSummary;
   message: string;
 }
 

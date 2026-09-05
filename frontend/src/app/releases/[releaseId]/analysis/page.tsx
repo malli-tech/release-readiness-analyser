@@ -75,6 +75,7 @@ export default function ReleaseAnalysisPage() {
   const securitySummary = analysis?.securitySummary;
   const performanceSummary = analysis?.performanceSummary;
   const unifiedSummary = analysis?.unifiedAnalysisSummary;
+  const riskSummary = analysis?.riskSummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -207,6 +208,150 @@ export default function ReleaseAnalysisPage() {
                       ID: {analysis.id.substring(0, 12)}...
                     </div>
                   </div>
+
+                  {/* Risk Engine Summary Card (Part 14) */}
+                  <Card className="border-rose-100 bg-gradient-to-br from-white via-slate-50/50 to-rose-50/20">
+                    <CardHeader className="pb-3 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5 text-rose-600" />
+                          <div>
+                            <CardTitle className="text-base font-bold text-slate-900">Static Risk Profile</CardTitle>
+                            <span className="text-[10px] text-slate-400 font-mono block">Engine Version: {riskSummary?.calculationVersion || 'risk-v1'}</span>
+                          </div>
+                        </div>
+                        {riskSummary?.overallRiskLevel && (
+                          <Badge
+                            variant={
+                              riskSummary.overallRiskLevel === 'LOW'
+                                ? 'ready'
+                                : riskSummary.overallRiskLevel === 'MEDIUM'
+                                ? 'warning'
+                                : riskSummary.overallRiskLevel === 'HIGH' || riskSummary.overallRiskLevel === 'CRITICAL'
+                                ? 'critical'
+                                : 'neutral'
+                            }
+                            size="md"
+                            dot={riskSummary.overallRiskLevel === 'CRITICAL'}
+                          >
+                            OVERALL RISK: {riskSummary.overallRiskLevel}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      {/* Risk Points Metrics Row */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                          <span className="text-[11px] text-slate-400 font-medium block">Overall Risk Level</span>
+                          <span className={`text-lg font-black ${
+                            riskSummary?.overallRiskLevel === 'LOW' ? 'text-emerald-600' :
+                            riskSummary?.overallRiskLevel === 'MEDIUM' ? 'text-amber-600' :
+                            riskSummary?.overallRiskLevel === 'HIGH' || riskSummary?.overallRiskLevel === 'CRITICAL' ? 'text-rose-600' : 'text-slate-600'
+                          }`}>
+                            {riskSummary?.overallRiskLevel || 'UNKNOWN'}
+                          </span>
+                        </div>
+                        <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100 shadow-2xs">
+                          <span className="text-[11px] text-rose-600 font-semibold block">Weighted Risk Points</span>
+                          <span className="text-xl font-bold text-rose-700">{riskSummary?.weightedRiskPoints ?? 0} pts</span>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
+                          <span className="text-[11px] text-slate-400 font-medium block">Base Risk Points</span>
+                          <span className="text-xl font-bold text-slate-900">{riskSummary?.baseRiskPoints ?? 0} pts</span>
+                        </div>
+                        <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 shadow-2xs">
+                          <span className="text-[11px] text-indigo-600 font-semibold block">Coverage Completeness</span>
+                          <span className="text-base font-bold text-indigo-900">{riskSummary?.completeness || 'UNKNOWN'}</span>
+                        </div>
+                      </div>
+
+                      {/* Category Risk Breakdown */}
+                      {riskSummary?.categoryRisk && (
+                        <div>
+                          <span className="text-xs font-semibold text-slate-700 block mb-2">Category Weighted Risk Breakdown</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 text-xs">
+                            {Object.entries(riskSummary.categoryRisk).map(([catKey, catRisk]) => (
+                              <div key={catKey} className="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-slate-700">{catKey.replace('_', ' ')}</span>
+                                  <Badge
+                                    variant={
+                                      catRisk.riskLevel === 'LOW'
+                                        ? 'ready'
+                                        : catRisk.riskLevel === 'MEDIUM'
+                                        ? 'warning'
+                                        : 'critical'
+                                    }
+                                    size="sm"
+                                  >
+                                    {catRisk.riskLevel}
+                                  </Badge>
+                                </div>
+                                <div className="text-xs font-mono font-bold text-slate-900">
+                                  {catRisk.weightedRiskPoints} pts
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {catRisk.findingCount} finding(s) ({catRisk.highFindings} High)
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Deterministic Risk Factors */}
+                      {riskSummary?.riskFactors && riskSummary.riskFactors.length > 0 && (
+                        <div>
+                          <span className="text-xs font-semibold text-slate-700 block mb-2">Identified Risk Factors</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {riskSummary.riskFactors.map((factor, idx) => (
+                              <div
+                                key={idx}
+                                className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+                                  factor.severity === 'HIGH'
+                                    ? 'bg-rose-50/50 border-rose-200 text-rose-900'
+                                    : factor.severity === 'MEDIUM'
+                                    ? 'bg-amber-50/50 border-amber-200 text-amber-900'
+                                    : 'bg-slate-50 border-slate-200 text-slate-800'
+                                }`}
+                              >
+                                <AlertCircle className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                  factor.severity === 'HIGH' ? 'text-rose-600' : factor.severity === 'MEDIUM' ? 'text-amber-600' : 'text-slate-500'
+                                }`} />
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-xs">{factor.title}</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-white/80 border border-slate-200 text-slate-600">
+                                      {factor.impactCategory}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] opacity-90 leading-relaxed">{factor.description}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Risk Warnings */}
+                      {riskSummary?.riskWarnings && riskSummary.riskWarnings.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          {riskSummary.riskWarnings.map((warn, idx) => (
+                            <div key={idx} className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>{warn}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Transparent Formula Disclaimer */}
+                      <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-100">
+                        Formula: Weighted Points = Base Weight (High:10, Med:5, Low:1) × Multiplier (Security:1.5x, Dependency:1.25x, Performance:1.1x, Testing/Quality:1.0x). Thresholds: Low &lt;10, Medium 10–25, High 25–50, Critical ≥50. At least 1 High Security finding enforces a minimum HIGH risk level.
+                      </p>
+                    </CardContent>
+                  </Card>
 
                   {/* Unified Analysis Summary Card (Part 13) */}
                   <Card className="border-indigo-100 bg-gradient-to-br from-white to-indigo-50/20">

@@ -133,6 +133,33 @@ Part 13 implements a **Unified Analysis Layer** that consolidates, deduplicates,
 - **No Readiness Scoring / Risk Engine**: Does not compute release readiness scores, weighted category risk metrics, RAG retrieval, or LLM recommendations (deferred to Parts 14–19).
 - **Zero Code Execution**: Operates purely on in-memory static finding domain models without executing code, invoking build tools, or performing network operations.
 
+---
+
+## Part 14 Capabilities: Risk Engine
+
+Part 14 implements a **100% static, deterministic Risk Engine** (`risk-v1`) that converts the unified findings and summary from Part 13 into a transparent, weighted `RiskSummary` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`, `UNKNOWN`).
+
+### Key Principles & Risk Calculation Formula
+- **Severity Base Weights**: `HIGH` = 10.00, `MEDIUM` = 5.00, `LOW` = 1.00, `INFO` = 0.00.
+- **Category Multipliers**: `SECURITY` = 1.50x, `DEPENDENCY` = 1.25x, `PERFORMANCE` = 1.10x, `TESTING` = 1.00x, `CODE_QUALITY` = 1.00x.
+- **Weighted Points Formula**: `weightedRiskPoints = sum( severityWeight(finding) * categoryMultiplier(category) )` computed with `BigDecimal` precision (`HALF_UP`, scale 2).
+- **Thresholds**:
+  - `LOW`: 0.00 – 9.99 weighted points
+  - `MEDIUM`: 10.00 – 24.99 weighted points
+  - `HIGH`: 25.00 – 49.99 weighted points
+  - `CRITICAL`: 50.00+ weighted points
+- **Critical Security Override**: If at least 1 `HIGH` severity `SECURITY` finding is present, the overall risk level is forced to at least `HIGH` (regardless of score).
+- **Category Risk Breakdown**: Computes `CategoryRisk` breakdowns (`findingCount`, `highFindings`, `mediumFindings`, `weightedRiskPoints`, `riskLevel`) for all 5 categories.
+- **Deterministic Risk Factors**: Generates explainable risk factor cards derived from actual data.
+- **Completeness Semantics**:
+  - `COMPLETE` with 0 findings -> `LOW` risk (0.00 pts).
+  - `PARTIAL` -> Calculates risk from observed findings, with risk warning attached regarding unanalyzed files.
+  - `UNKNOWN` (unsupported project or missing source) -> `UNKNOWN` overall risk level.
+  - Failed analyzers -> Propagates warnings about incomplete analyzer coverage.
+- **No Readiness Score / Release Gates**: Does not produce 0–100 readiness scores, release approval decisions, deployment gates, or AI/LLM recommendations (deferred to Parts 15–19).
+- **Zero Code Execution & Network Operations**: Processes in-memory domain models without process invocations, file re-scanning, or network calls.
+
+
 
 
 

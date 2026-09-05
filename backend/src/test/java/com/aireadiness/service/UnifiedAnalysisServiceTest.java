@@ -46,6 +46,7 @@ class UnifiedAnalysisServiceTest {
     @Mock private DependencyAnalyzer dependencyAnalyzer;
     @Mock private SecurityAnalyzer securityAnalyzer;
     @Mock private PerformanceAnalyzer performanceAnalyzer;
+    @org.mockito.Spy private com.aireadiness.risk.RiskEngine riskEngine = new com.aireadiness.risk.RiskEngine();
 
     @InjectMocks
     private AnalysisService analysisService;
