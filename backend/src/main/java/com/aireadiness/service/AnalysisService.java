@@ -2,6 +2,7 @@ package com.aireadiness.service;
 
 import com.aireadiness.analyzer.dependency.DependencyAnalyzer;
 import com.aireadiness.analyzer.quality.CodeQualityAnalyzer;
+import com.aireadiness.analyzer.security.SecurityAnalyzer;
 import com.aireadiness.analyzer.testing.TestingAnalyzer;
 import com.aireadiness.dto.analysis.AnalysisResponse;
 import com.aireadiness.exception.InvalidArchiveException;
@@ -30,6 +31,7 @@ public class AnalysisService {
     private final CodeQualityAnalyzer codeQualityAnalyzer;
     private final TestingAnalyzer testingAnalyzer;
     private final DependencyAnalyzer dependencyAnalyzer;
+    private final SecurityAnalyzer securityAnalyzer;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -41,7 +43,8 @@ public class AnalysisService {
             ProjectDetectionService projectDetectionService,
             CodeQualityAnalyzer codeQualityAnalyzer,
             TestingAnalyzer testingAnalyzer,
-            DependencyAnalyzer dependencyAnalyzer
+            DependencyAnalyzer dependencyAnalyzer,
+            SecurityAnalyzer securityAnalyzer
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -53,6 +56,7 @@ public class AnalysisService {
         this.codeQualityAnalyzer = codeQualityAnalyzer;
         this.testingAnalyzer = testingAnalyzer;
         this.dependencyAnalyzer = dependencyAnalyzer;
+        this.securityAnalyzer = securityAnalyzer;
     }
 
     private User getAuthenticatedUser() {
@@ -137,6 +141,15 @@ public class AnalysisService {
             saved.setDependencySummary(dependencyAnalyzer.getLastSummary());
         }
 
+        // 10. Execute Static Security Analyzer (Part 11)
+        if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(securityAnalyzer.getType())) {
+            List<Finding> securityFindings = securityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+            if (securityFindings != null) {
+                allFindings.addAll(securityFindings);
+            }
+            saved.setSecuritySummary(securityAnalyzer.getLastSummary());
+        }
+
         allFindings.forEach(f -> f.setAnalysisId(saved.getId()));
         saved.setFindings(allFindings);
         saved.setWarnings(combinedWarnings);
@@ -150,7 +163,7 @@ public class AnalysisService {
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(finalSaved, "Static project detection, code quality, testing, and dependency analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, and security analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
@@ -189,6 +202,7 @@ public class AnalysisService {
                 analysis.getWarnings(),
                 analysis.getTestingSummary(),
                 analysis.getDependencySummary(),
+                analysis.getSecuritySummary(),
                 message
         );
     }

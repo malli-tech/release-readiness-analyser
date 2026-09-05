@@ -51,6 +51,8 @@ public class Analysis {
 
     private DependencySummary dependencySummary;
 
+    private SecuritySummary securitySummary;
+
     public Analysis() {
     }
 
@@ -197,5 +199,13 @@ public class Analysis {
 
     public void setDependencySummary(DependencySummary dependencySummary) {
         this.dependencySummary = dependencySummary;
+    }
+
+    public SecuritySummary getSecuritySummary() {
+        return securitySummary;
+    }
+
+    public void setSecuritySummary(SecuritySummary securitySummary) {
+        this.securitySummary = securitySummary;
     }
 }

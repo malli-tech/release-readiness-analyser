@@ -83,6 +83,25 @@ export interface DependencySummary {
   disclaimer: string;
 }
 
+export interface SecuritySummary {
+  totalSecurityFindings: number;
+  criticalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  hardcodedSecretsDetected: number;
+  insecureTransportFindings: number;
+  dangerousExecutionFindings: number;
+  injectionRiskFindings: number;
+  deserializationFindings: number;
+  weakCryptographyFindings: number;
+  configurationFindings: number;
+  sensitiveFilesDetected: number;
+  securityCompleteness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  securityWarnings: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -99,6 +118,7 @@ export interface AnalysisResponse {
   warnings: string[];
   testingSummary?: TestingSummary;
   dependencySummary?: DependencySummary;
+  securitySummary?: SecuritySummary;
   message: string;
 }
 

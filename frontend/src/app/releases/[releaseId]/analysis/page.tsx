@@ -72,6 +72,7 @@ export default function ReleaseAnalysisPage() {
   const structure = profile?.projectStructure;
   const testingSummary = analysis?.testingSummary;
   const dependencySummary = analysis?.dependencySummary;
+  const securitySummary = analysis?.securitySummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -107,10 +108,10 @@ export default function ReleaseAnalysisPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      Code Quality, Testing & Dependency Analyzer
+                      Code Quality, Testing, Dependency & Security Analyzer
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                      Static project inspection, code quality pattern evaluation, testing structure analysis, and manifest dependency management assessment.
+                      Static project inspection, code quality pattern evaluation, testing structure analysis, dependency management, and security vulnerability scanning.
                     </p>
                   </div>
                   {analysis && (
@@ -389,6 +390,71 @@ export default function ReleaseAnalysisPage() {
                         </p>
                       </CardContent>
                     </Card>
+
+                    {/* Static Security Summary Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-rose-600" />
+                            <CardTitle className="text-sm">Static Security Analysis Summary</CardTitle>
+                          </div>
+                          {securitySummary?.securityCompleteness && (
+                            <Badge
+                              variant={
+                                securitySummary.securityCompleteness === 'COMPLETE'
+                                  ? 'ready'
+                                  : securitySummary.securityCompleteness === 'PARTIAL'
+                                  ? 'warning'
+                                  : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              {securitySummary.securityCompleteness}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Total Security</span>
+                            <span className="text-base font-bold text-slate-900">{securitySummary?.totalSecurityFindings ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-rose-50/50 rounded-xl border border-rose-100">
+                            <span className="text-[10px] text-rose-700 font-medium block">Hardcoded Secrets</span>
+                            <span className="text-base font-bold text-rose-700">{securitySummary?.hardcodedSecretsDetected ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
+                            <span className="text-[10px] text-amber-700 font-medium block">Dangerous Exec</span>
+                            <span className="text-base font-bold text-amber-700">{securitySummary?.dangerousExecutionFindings ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                            <span className="text-[10px] text-indigo-700 font-medium block">Injection Risks</span>
+                            <span className="text-base font-bold text-indigo-700">{securitySummary?.injectionRiskFindings ?? 0}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-[11px] p-2.5 bg-slate-50 rounded-xl border border-slate-200 font-mono">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Insecure HTTP</span>
+                            <span className="font-bold text-slate-800">{securitySummary?.insecureTransportFindings ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Weak Crypto</span>
+                            <span className="font-bold text-amber-700">{securitySummary?.weakCryptographyFindings ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Sensitive Files</span>
+                            <span className="font-bold text-rose-700">{securitySummary?.sensitiveFilesDetected ?? 0}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 italic">
+                          {securitySummary?.disclaimer || 'Static heuristic security analysis. Does not prove exploitability or replace penetration testing.'}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {/* Findings List Section */}
@@ -402,7 +468,7 @@ export default function ReleaseAnalysisPage() {
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           {/* Category Filters */}
                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-                            {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES'].map((cat) => (
+                            {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES', 'SECURITY'].map((cat) => (
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
@@ -654,7 +720,7 @@ export default function ReleaseAnalysisPage() {
                             <div key={idx} className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100 space-y-1">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-indigo-950 font-mono block">{analyzerKey}</span>
-                                {(analyzerKey === 'CODE_QUALITY' || analyzerKey === 'TESTING' || analyzerKey === 'DEPENDENCIES') && (
+                                {(analyzerKey === 'CODE_QUALITY' || analyzerKey === 'TESTING' || analyzerKey === 'DEPENDENCIES' || analyzerKey === 'SECURITY') && (
                                   <Badge variant="ready" size="sm">Completed</Badge>
                                 )}
                               </div>

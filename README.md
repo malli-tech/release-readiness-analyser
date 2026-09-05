@@ -67,8 +67,30 @@ Part 10 implements a **100% static Dependency Analyzer** evaluating manifest dec
 5. `DEPENDENCY_VERSION_INCONSISTENCY`: Detects inconsistent versions declared across multiple module manifests (`MEDIUM`).
 6. `DEPENDENCY_MANIFEST_WARNING`: Summary-level warning for malformed or partially parsed manifests (`LOW`).
 
-### Absolute Security & Vulnerability Boundary
-- **Zero Process Execution**: No invocation of `mvn`, `gradle`, `npm`, `yarn`, `pnpm`, `pip`, `poetry`, `go`, `dotnet`, or `composer`. No `ProcessBuilder` or `Runtime.exec()`.
-- **Zero Registry / Network Access**: Does not contact npm registry, Maven Central, PyPI, Go proxies, NuGet, or Packagist.
-- **Zero CVE Vulnerability Queries**: Does not query OSV, NVD, Snyk, Sonatype, or OWASP. Measures static dependency management quality, not CVE security status.
+---
+
+## Part 11 Capabilities: Static Security Analyzer
+
+Part 11 implements a **100% static Security Analyzer** that evaluates source code and configuration files for 12 security weakness categories without executing project code, installing dependencies, or querying external vulnerability intelligence databases.
+
+### Supported Weakness Categories & Rules
+1. `SECURITY_HARDCODED_SECRET`: Detects likely hardcoded credentials, password assignments, API keys, access tokens, and PEM private key material (`CRITICAL` / `HIGH`). Automatically redacts all sensitive values as `[REDACTED SECRET]`.
+2. `SECURITY_INSECURE_HTTP`: Detects plain HTTP transport URLs in source/configuration where HTTPS is expected (`MEDIUM`). Excludes `localhost` and `127.0.0.1`.
+3. `SECURITY_TLS_VERIFICATION_DISABLED`: Detects disabled TLS certificate verification or trust-all SSL configurations (`HIGH`).
+4. `SECURITY_DANGEROUS_EXECUTION`: Detects dynamic command execution APIs (`Runtime.exec`, `ProcessBuilder`, `eval`, `exec`, `os.system`, `child_process`, `shell_exec`) requiring security review (`HIGH`).
+5. `SECURITY_SQL_INJECTION_RISK`: Detects unparameterized SQL query construction using string concatenation or unescaped string interpolation (`HIGH`).
+6. `SECURITY_COMMAND_INJECTION_RISK`: Detects dynamic command string construction with variables prior to execution (`HIGH`).
+7. `SECURITY_PATH_TRAVERSAL_RISK`: Detects unvalidated path construction with user parameters or `../` sequences (`HIGH`).
+8. `SECURITY_INSECURE_DESERIALIZATION`: Detects dangerous deserialization patterns e.g. Java `ObjectInputStream.readObject()`, Python `pickle.loads()`, PHP `unserialize()` (`HIGH`).
+9. `SECURITY_WEAK_CRYPTOGRAPHY`: Detects weak cryptographic algorithms (`MD5`, `SHA-1`, `DES`, `3DES`, `ECB` mode) (`MEDIUM` / `HIGH`).
+10. `SECURITY_DEBUG_ENABLED`: Detects explicit debug mode or verbose error exposure enabled in production settings (`MEDIUM`).
+11. `SECURITY_PERMISSIVE_CORS`: Detects wildcard CORS policies (`Access-Control-Allow-Origin: *`) (`MEDIUM`).
+12. `SECURITY_SENSITIVE_FILE_EXPOSED` & `SECURITY_ENV_FILE_WITH_SECRET`: Detects committed sensitive files e.g. `.env` files with secret keys or private service account credential files (`HIGH`).
+
+### Security Boundaries & Non-Execution Mandate
+- **Zero Code Execution**: Uploaded code is strictly parsed statically as text/AST. No `Runtime.exec()`, `ProcessBuilder`, dynamic reflection, or script execution.
+- **Zero Network Access / Registry Scans**: Does not connect to external vulnerability databases (CVE/NVD/OSV), package registries, or remote security APIs.
+- **Strict Secret Redaction**: All secret values in findings, logs, evidence, and API responses are automatically replaced with `[REDACTED SECRET]`.
+- **Pipeline Lifecycle State**: Analysis finishes as `COMPLETED`. Release status remains `READY_FOR_ANALYSIS` (readiness scoring is deferred to Part 13).
+
 
