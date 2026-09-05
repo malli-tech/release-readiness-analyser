@@ -43,7 +43,7 @@ public class Analysis {
 
     private RiskSummary riskSummary;
 
-    private Double readinessScore;
+    private ReadinessScore readinessScore;
 
     private List<String> warnings = new ArrayList<>();
 
@@ -171,11 +171,11 @@ public class Analysis {
         this.riskSummary = riskSummary;
     }
 
-    public Double getReadinessScore() {
+    public ReadinessScore getReadinessScore() {
         return readinessScore;
     }
 
-    public void setReadinessScore(Double readinessScore) {
+    public void setReadinessScore(ReadinessScore readinessScore) {
         this.readinessScore = readinessScore;
     }
 

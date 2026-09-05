@@ -47,6 +47,7 @@ class UnifiedAnalysisServiceTest {
     @Mock private SecurityAnalyzer securityAnalyzer;
     @Mock private PerformanceAnalyzer performanceAnalyzer;
     @org.mockito.Spy private com.aireadiness.risk.RiskEngine riskEngine = new com.aireadiness.risk.RiskEngine();
+    @org.mockito.Spy private com.aireadiness.readiness.ReadinessScoreEngine readinessScoreEngine = new com.aireadiness.readiness.ReadinessScoreEngine();
 
     @InjectMocks
     private AnalysisService analysisService;
@@ -147,6 +148,10 @@ class UnifiedAnalysisServiceTest {
 
         assertTrue(summary.getCompletedAnalyzers().containsAll(List.of("PROJECT_DETECTION", "CODE_QUALITY", "TESTING", "DEPENDENCIES", "SECURITY", "PERFORMANCE")));
         assertTrue(summary.getFailedAnalyzers().isEmpty());
+
+        assertNotNull(response.getReadinessScore());
+        assertNotNull(response.getReadinessScore().getReadinessScore());
+        assertEquals(ReadinessConfidence.HIGH, response.getReadinessScore().getConfidence());
     }
 
     @Test

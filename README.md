@@ -159,6 +159,34 @@ Part 14 implements a **100% static, deterministic Risk Engine** (`risk-v1`) that
 - **No Readiness Score / Release Gates**: Does not produce 0–100 readiness scores, release approval decisions, deployment gates, or AI/LLM recommendations (deferred to Parts 15–19).
 - **Zero Code Execution & Network Operations**: Processes in-memory domain models without process invocations, file re-scanning, or network calls.
 
+---
+
+## Part 15 Capabilities: Readiness Score Layer
+
+Part 15 implements a **100% static, deterministic Readiness Score Engine** (`readiness-v1`) that evaluates overall release readiness on a scale from `0.00` to `100.00` based on static analysis data and Part 14 weighted risk points.
+
+### Key Principles & Formula
+- **Core Formula**: `readinessScore = max(0.00, 100.00 - weightedRiskPoints)` computed with `BigDecimal` precision (`scale 2`, `RoundingMode.HALF_UP`). Clamped to minimum `0.00` if `weightedRiskPoints > 100.00`.
+- **Primary Risk Signal**: Part 14 `weightedRiskPoints` serves as the primary negative signal. No arbitrary second penalties are applied for severity/category findings to prevent double-counting.
+- **Readiness Level Classification**:
+  - `EXCELLENT`: `90.00` – `100.00`
+  - `GOOD`: `75.00` – `89.99`
+  - `FAIR`: `50.00` – `74.99`
+  - `POOR`: `25.00` – `49.99`
+  - `NOT_READY`: `0.00` – `24.99`
+  - `UNKNOWN`: Insufficient or unknown analysis coverage (`readinessScore = null`).
+- **Confidence Model**:
+  - `HIGH`: `COMPLETE` analysis coverage.
+  - `MEDIUM`: `PARTIAL` upload coverage or partial analyzer failure.
+  - `UNKNOWN`: Insufficient analysis coverage or unsupported ecosystem.
+- **Completeness & Coverage Semantics**:
+  - `COMPLETE`: Score calculated normally with `HIGH` confidence.
+  - `PARTIAL`: Score calculated from observed findings with `MEDIUM` confidence and warning attached.
+  - `UNKNOWN`: Score is `null`, level is `UNKNOWN`, confidence is `UNKNOWN`, warning attached.
+- **Data-Derived Factors**: Generates deterministic `ReadinessFactor` cards based purely on empirical findings and summary data (e.g. `Strong Release Readiness`, `High Severity Findings Present`, `Elevated Release Risk`, `High-Security Findings Present`, `Testing Gaps Detected`, `Dependency Risk Detected`, `Performance Risk Detected`, `Partial Analysis Coverage`, `Unknown Analysis Coverage`).
+- **Version Tracking**: Tagged with calculation version `readiness-v1`.
+- **Zero AI / Zero Code Execution**: Operates 100% statically without LLM calls, RAG pipelines, external network services, or code execution.
+
 
 
 

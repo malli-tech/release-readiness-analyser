@@ -76,6 +76,7 @@ export default function ReleaseAnalysisPage() {
   const performanceSummary = analysis?.performanceSummary;
   const unifiedSummary = analysis?.unifiedAnalysisSummary;
   const riskSummary = analysis?.riskSummary;
+  const readinessScore = analysis?.readinessScore;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -208,6 +209,133 @@ export default function ReleaseAnalysisPage() {
                       ID: {analysis.id.substring(0, 12)}...
                     </div>
                   </div>
+
+                  {/* Release Readiness Profile Card (Part 15) */}
+                  <Card className="border-indigo-200 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50">
+                    <CardHeader className="pb-3 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-indigo-600" />
+                          <div>
+                            <CardTitle className="text-base font-bold text-slate-900">Release Readiness Profile</CardTitle>
+                            <span className="text-[10px] text-slate-400 font-mono block">Engine Version: {readinessScore?.calculationVersion || 'readiness-v1'}</span>
+                          </div>
+                        </div>
+                        {readinessScore?.readinessLevel && (
+                          <Badge
+                            variant={
+                              readinessScore.readinessLevel === 'EXCELLENT' || readinessScore.readinessLevel === 'GOOD'
+                                ? 'ready'
+                                : readinessScore.readinessLevel === 'FAIR' || readinessScore.readinessLevel === 'POOR'
+                                ? 'warning'
+                                : readinessScore.readinessLevel === 'NOT_READY'
+                                ? 'critical'
+                                : 'neutral'
+                            }
+                            size="md"
+                            dot={readinessScore.readinessLevel === 'NOT_READY'}
+                          >
+                            READINESS: {readinessScore.readinessLevel}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      {/* Hero Metrics Row */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-4 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+                          <span className="text-[11px] text-indigo-600 font-semibold block">Readiness Score</span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                              {readinessScore?.readinessScore !== null && readinessScore?.readinessScore !== undefined
+                                ? readinessScore.readinessScore.toFixed(2)
+                                : 'N/A'}
+                            </span>
+                            <span className="text-xs text-slate-400 font-bold">/ 100</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                          <span className="text-[11px] text-slate-400 font-medium block">Readiness Level</span>
+                          <span className={`text-xl font-black ${
+                            readinessScore?.readinessLevel === 'EXCELLENT' || readinessScore?.readinessLevel === 'GOOD' ? 'text-emerald-600' :
+                            readinessScore?.readinessLevel === 'FAIR' || readinessScore?.readinessLevel === 'POOR' ? 'text-amber-600' :
+                            readinessScore?.readinessLevel === 'NOT_READY' ? 'text-rose-600' : 'text-slate-600'
+                          }`}>
+                            {readinessScore?.readinessLevel || 'UNKNOWN'}
+                          </span>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                          <span className="text-[11px] text-slate-400 font-medium block">Assessment Confidence</span>
+                          <span className={`text-xl font-bold ${
+                            readinessScore?.confidence === 'HIGH' ? 'text-indigo-600' :
+                            readinessScore?.confidence === 'MEDIUM' ? 'text-amber-600' : 'text-slate-600'
+                          }`}>
+                            {readinessScore?.confidence || 'UNKNOWN'}
+                          </span>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                          <span className="text-[11px] text-slate-400 font-medium block">Primary Negative Signal</span>
+                          <span className="text-xl font-bold text-rose-600">
+                            {readinessScore?.weightedRiskPoints ?? 0} pts
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Readiness Factors */}
+                      {readinessScore?.readinessFactors && readinessScore.readinessFactors.length > 0 && (
+                        <div>
+                          <span className="text-xs font-semibold text-slate-700 block mb-2 font-sans">Readiness Factors</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {readinessScore.readinessFactors.map((factor, idx) => (
+                              <div
+                                key={idx}
+                                className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+                                  factor.impact === 'HIGH'
+                                    ? 'bg-rose-50/50 border-rose-200 text-rose-900'
+                                    : factor.impact === 'MEDIUM'
+                                    ? 'bg-amber-50/50 border-amber-200 text-amber-900'
+                                    : 'bg-emerald-50/50 border-emerald-200 text-emerald-900'
+                                }`}
+                              >
+                                <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${
+                                  factor.impact === 'HIGH' ? 'text-rose-600' : factor.impact === 'MEDIUM' ? 'text-amber-600' : 'text-emerald-600'
+                                }`} />
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-xs">{factor.factor}</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-white/80 border border-slate-200 text-slate-600">
+                                      {factor.category}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] opacity-90 leading-relaxed">{factor.description}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Readiness Warnings */}
+                      {readinessScore?.readinessWarnings && readinessScore.readinessWarnings.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          {readinessScore.readinessWarnings.map((warn, idx) => (
+                            <div key={idx} className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>{warn}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Formula Disclaimer */}
+                      <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-100">
+                        Formula: Readiness Score = max(0, 100 - weightedRiskPoints). Bands: EXCELLENT (90–100), GOOD (75–89.99), FAIR (50–74.99), POOR (25–49.99), NOT_READY (0–24.99). Calculated statically without AI reasoning or code execution.
+                      </p>
+                    </CardContent>
+                  </Card>
 
                   {/* Risk Engine Summary Card (Part 14) */}
                   <Card className="border-rose-100 bg-gradient-to-br from-white via-slate-50/50 to-rose-50/20">

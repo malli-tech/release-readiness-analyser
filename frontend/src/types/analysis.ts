@@ -170,6 +170,34 @@ export interface RiskSummary {
   calculationVersion: string;
 }
 
+export type ReadinessLevel = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'NOT_READY' | 'UNKNOWN';
+export type ReadinessConfidence = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+
+export interface ReadinessFactor {
+  factor: string;
+  description: string;
+  impact: 'HIGH' | 'MEDIUM' | 'LOW';
+  category: string;
+}
+
+export interface ReadinessScore {
+  readinessScore: number | null;
+  readinessLevel: ReadinessLevel;
+  confidence: ReadinessConfidence;
+  weightedRiskPoints: number;
+  baseRiskPoints: number;
+  totalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  infoFindings: number;
+  completeness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  riskLevel: string;
+  calculationVersion: string;
+  readinessWarnings: string[];
+  readinessFactors: ReadinessFactor[];
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -182,7 +210,7 @@ export interface AnalysisResponse {
   analysisPlan: AnalysisPlan;
   findings: Finding[];
   categoryScores?: Record<string, number>;
-  readinessScore?: number;
+  readinessScore?: ReadinessScore;
   warnings: string[];
   testingSummary?: TestingSummary;
   dependencySummary?: DependencySummary;

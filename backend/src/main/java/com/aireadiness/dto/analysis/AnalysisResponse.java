@@ -5,6 +5,7 @@ import com.aireadiness.model.DependencySummary;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.PerformanceSummary;
 import com.aireadiness.model.ProjectProfile;
+import com.aireadiness.model.ReadinessScore;
 import com.aireadiness.model.RiskSummary;
 import com.aireadiness.model.SecuritySummary;
 import com.aireadiness.model.TestingSummary;
@@ -28,7 +29,7 @@ public class AnalysisResponse {
     private List<Finding> findings;
     private Map<String, Double> categoryScores;
     private RiskSummary riskSummary;
-    private Double readinessScore;
+    private ReadinessScore readinessScore;
     private List<String> warnings;
     private TestingSummary testingSummary;
     private DependencySummary dependencySummary;
@@ -39,7 +40,7 @@ public class AnalysisResponse {
     public AnalysisResponse() {
     }
 
-    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, String message) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, ReadinessScore readinessScore, List<String> warnings, String message) {
         this.id = id;
         this.projectId = projectId;
         this.releaseId = releaseId;
@@ -56,22 +57,22 @@ public class AnalysisResponse {
         this.message = message;
     }
 
-    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, String message) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, ReadinessScore readinessScore, List<String> warnings, TestingSummary testingSummary, String message) {
         this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, message);
         this.testingSummary = testingSummary;
     }
 
-    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, String message) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, ReadinessScore readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, String message) {
         this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, testingSummary, message);
         this.dependencySummary = dependencySummary;
     }
 
-    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, SecuritySummary securitySummary, String message) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, ReadinessScore readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, SecuritySummary securitySummary, String message) {
         this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, testingSummary, dependencySummary, message);
         this.securitySummary = securitySummary;
     }
 
-    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, Double readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, SecuritySummary securitySummary, PerformanceSummary performanceSummary, String message) {
+    public AnalysisResponse(String id, String projectId, String releaseId, int runNumber, String status, Instant startedAt, Instant completedAt, ProjectProfile projectProfile, AnalysisPlan analysisPlan, List<Finding> findings, Map<String, Double> categoryScores, ReadinessScore readinessScore, List<String> warnings, TestingSummary testingSummary, DependencySummary dependencySummary, SecuritySummary securitySummary, PerformanceSummary performanceSummary, String message) {
         this(id, projectId, releaseId, runNumber, status, startedAt, completedAt, projectProfile, analysisPlan, findings, categoryScores, readinessScore, warnings, testingSummary, dependencySummary, securitySummary, message);
         this.performanceSummary = performanceSummary;
     }
@@ -164,11 +165,11 @@ public class AnalysisResponse {
         this.categoryScores = categoryScores;
     }
 
-    public Double getReadinessScore() {
+    public ReadinessScore getReadinessScore() {
         return readinessScore;
     }
 
-    public void setReadinessScore(Double readinessScore) {
+    public void setReadinessScore(ReadinessScore readinessScore) {
         this.readinessScore = readinessScore;
     }
 

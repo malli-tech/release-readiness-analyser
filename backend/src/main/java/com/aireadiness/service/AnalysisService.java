@@ -35,6 +35,7 @@ public class AnalysisService {
     private final SecurityAnalyzer securityAnalyzer;
     private final PerformanceAnalyzer performanceAnalyzer;
     private final com.aireadiness.risk.RiskEngine riskEngine;
+    private final com.aireadiness.readiness.ReadinessScoreEngine readinessScoreEngine;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -49,7 +50,8 @@ public class AnalysisService {
             DependencyAnalyzer dependencyAnalyzer,
             SecurityAnalyzer securityAnalyzer,
             PerformanceAnalyzer performanceAnalyzer,
-            com.aireadiness.risk.RiskEngine riskEngine
+            com.aireadiness.risk.RiskEngine riskEngine,
+            com.aireadiness.readiness.ReadinessScoreEngine readinessScoreEngine
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -64,6 +66,7 @@ public class AnalysisService {
         this.securityAnalyzer = securityAnalyzer;
         this.performanceAnalyzer = performanceAnalyzer;
         this.riskEngine = riskEngine;
+        this.readinessScoreEngine = readinessScoreEngine;
     }
 
     private User getAuthenticatedUser() {
@@ -227,23 +230,46 @@ public class AnalysisService {
         );
 
         // 13. PART 14 — RISK ENGINE
-        RiskSummary riskSummary = riskEngine.calculateRisk(unifiedSummary, unifiedFindings, profile);
+        RiskSummary riskSummary = null;
+        try {
+            riskSummary = riskEngine.calculateRisk(unifiedSummary, unifiedFindings, profile);
+        } catch (Exception e) {
+            combinedWarnings.add("Risk calculation failed: " + e.getMessage());
+            riskSummary = new RiskSummary();
+            riskSummary.setOverallRiskLevel(RiskLevel.UNKNOWN);
+            riskSummary.setCompleteness(unifiedSummary != null ? unifiedSummary.getCompleteness() : "UNKNOWN");
+            riskSummary.setRiskWarnings(List.of("Risk calculation failed: " + e.getMessage()));
+        }
+
+        // 14. PART 15 — READINESS SCORE
+        ReadinessScore readinessScore = null;
+        try {
+            readinessScore = readinessScoreEngine.calculateReadiness(unifiedSummary, riskSummary, profile);
+        } catch (Exception e) {
+            combinedWarnings.add("Readiness score calculation failed: " + e.getMessage());
+            readinessScore = new ReadinessScore();
+            readinessScore.setReadinessLevel(ReadinessLevel.UNKNOWN);
+            readinessScore.setConfidence(ReadinessConfidence.UNKNOWN);
+            readinessScore.setCompleteness(unifiedSummary != null ? unifiedSummary.getCompleteness() : "UNKNOWN");
+            readinessScore.setReadinessWarnings(List.of("Readiness score calculation failed: " + e.getMessage()));
+        }
 
         saved.setFindings(unifiedFindings);
         saved.setWarnings(combinedWarnings);
         saved.setUnifiedAnalysisSummary(unifiedSummary);
         saved.setRiskSummary(riskSummary);
+        saved.setReadinessScore(readinessScore);
         saved.setStatus("COMPLETED");
         saved.setCompletedAt(Instant.now());
 
         Analysis finalSaved = analysisRepository.save(saved);
 
-        // Keep release READY_FOR_ANALYSIS until readiness scoring pipeline is implemented in Part 15.
+        // Keep release READY_FOR_ANALYSIS until readiness scoring pipeline is completed.
         release.setStatus("READY_FOR_ANALYSIS");
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, security, performance, and unified analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, security, performance, unified analysis, risk evaluation, and readiness scoring completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
