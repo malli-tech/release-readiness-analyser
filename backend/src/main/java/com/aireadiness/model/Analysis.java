@@ -218,4 +218,14 @@ public class Analysis {
     public void setPerformanceSummary(PerformanceSummary performanceSummary) {
         this.performanceSummary = performanceSummary;
     }
+
+    private UnifiedAnalysisSummary unifiedAnalysisSummary;
+
+    public UnifiedAnalysisSummary getUnifiedAnalysisSummary() {
+        return unifiedAnalysisSummary;
+    }
+
+    public void setUnifiedAnalysisSummary(UnifiedAnalysisSummary unifiedAnalysisSummary) {
+        this.unifiedAnalysisSummary = unifiedAnalysisSummary;
+    }
 }

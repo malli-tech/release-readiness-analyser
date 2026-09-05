@@ -117,5 +117,22 @@ Part 12 implements a **100% static, heuristic Performance Analyzer** that inspec
 9. `PERFORMANCE_LARGE_COLLECTION_ALLOCATION_IN_LOOP`: Detects repeated collection allocations (`new ArrayList`, `new HashMap`) inside loop bodies (`LOW` / `MEDIUM`).
 10. `PERFORMANCE_REPEATED_EXPENSIVE_OPERATION`: Detects repeated expensive operations (e.g. `ObjectMapper` parsing/serialization) inside loops (`MEDIUM`).
 
+---
+
+## Part 13 Capabilities: Unified Analysis Layer
+
+Part 13 implements a **Unified Analysis Layer** that consolidates, deduplicates, normalizes, and summarizes static findings across all 5 specialized analyzers (`CODE_QUALITY`, `TESTING`, `DEPENDENCY`, `SECURITY`, `PERFORMANCE`) into a single structured `UnifiedAnalysisSummary`.
+
+### Key Responsibilities & Architectural Scope
+- **Finding Consolidation & Deduplication**: Aggregates findings from all executed analyzers while eliminating exact duplicates via deterministic composite keys (`analysisId:ruleId:filePath:lineNumber:evidenceHash`).
+- **Category & Severity Aggregation**: Computes real-time category counts (`CODE_QUALITY`, `TESTING`, `DEPENDENCY`, `SECURITY`, `PERFORMANCE`) and severity counts (`HIGH`, `MEDIUM`, `LOW`, `INFO`) verifying `sum(severity counts) == totalFindings`.
+- **Deterministic Ordering**: Sorts unified findings consistently by Severity weight -> Category -> File Path -> Line Number -> Rule ID.
+- **Analyzer Execution Tracking**: Tracks status of each analyzer (`COMPLETED`, `FAILED`, `SKIPPED`) in `completedAnalyzers`, `failedAnalyzers`, and `skippedAnalyzers`.
+- **Fault Tolerance**: If an individual analyzer encounters an error during execution, successful results from other analyzers survive, the failure is recorded in `failedAnalyzers`, and a warning is appended.
+- **Preserved Summaries**: Retains specialized summaries (`testingSummary`, `dependencySummary`, `securitySummary`, `performanceSummary`) alongside the unified summary.
+- **No Readiness Scoring / Risk Engine**: Does not compute release readiness scores, weighted category risk metrics, RAG retrieval, or LLM recommendations (deferred to Parts 14–19).
+- **Zero Code Execution**: Operates purely on in-memory static finding domain models without executing code, invoking build tools, or performing network operations.
+
+
 
 

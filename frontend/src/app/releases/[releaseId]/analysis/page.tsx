@@ -74,6 +74,7 @@ export default function ReleaseAnalysisPage() {
   const dependencySummary = analysis?.dependencySummary;
   const securitySummary = analysis?.securitySummary;
   const performanceSummary = analysis?.performanceSummary;
+  const unifiedSummary = analysis?.unifiedAnalysisSummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -207,7 +208,115 @@ export default function ReleaseAnalysisPage() {
                     </div>
                   </div>
 
-                  {/* Code Quality & Testing Overview */}
+                  {/* Unified Analysis Summary Card (Part 13) */}
+                  <Card className="border-indigo-100 bg-gradient-to-br from-white to-indigo-50/20">
+                    <CardHeader className="pb-3 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-indigo-600" />
+                          <CardTitle className="text-base font-bold">Unified Static Analysis Summary</CardTitle>
+                        </div>
+                        {unifiedSummary?.completeness && (
+                          <Badge
+                            variant={
+                              unifiedSummary.completeness === 'COMPLETE'
+                                ? 'ready'
+                                : unifiedSummary.completeness === 'PARTIAL'
+                                ? 'warning'
+                                : 'neutral'
+                            }
+                            size="sm"
+                          >
+                            {unifiedSummary.completeness} ANALYSIS
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4">
+                      {/* Top Metrics Row */}
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div className="p-3 bg-white rounded-xl border border-slate-200">
+                          <span className="text-[11px] text-slate-400 font-medium block">Total Findings</span>
+                          <span className="text-xl font-black text-slate-900">{unifiedSummary?.totalFindings ?? findings.length}</span>
+                        </div>
+                        <div className="p-3 bg-rose-50/60 rounded-xl border border-rose-100">
+                          <span className="text-[11px] text-rose-600 font-semibold block">High Severity</span>
+                          <span className="text-xl font-bold text-rose-700">{unifiedSummary?.highFindings ?? highFindings.length}</span>
+                        </div>
+                        <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-100">
+                          <span className="text-[11px] text-amber-600 font-semibold block">Medium Severity</span>
+                          <span className="text-xl font-bold text-amber-700">{unifiedSummary?.mediumFindings ?? mediumFindings.length}</span>
+                        </div>
+                        <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+                          <span className="text-[11px] text-blue-600 font-semibold block">Low Severity</span>
+                          <span className="text-xl font-bold text-blue-700">{unifiedSummary?.lowFindings ?? lowFindings.length}</span>
+                        </div>
+                        <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                          <span className="text-[11px] text-indigo-600 font-semibold block">Affected Files</span>
+                          <span className="text-xl font-bold text-indigo-800">{unifiedSummary?.affectedFiles ?? 0}</span>
+                        </div>
+                      </div>
+
+                      {/* Category Aggregates Grid */}
+                      {unifiedSummary?.findingsByCategory && (
+                        <div>
+                          <span className="text-xs font-semibold text-slate-700 block mb-2">Consolidated Findings by Category</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono text-xs">
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block font-sans">Code Quality</span>
+                              <span className="font-bold text-slate-800">{unifiedSummary.findingsByCategory['CODE_QUALITY'] ?? 0}</span>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block font-sans">Testing</span>
+                              <span className="font-bold text-emerald-700">{unifiedSummary.findingsByCategory['TESTING'] ?? 0}</span>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block font-sans">Dependencies</span>
+                              <span className="font-bold text-purple-700">{unifiedSummary.findingsByCategory['DEPENDENCY'] ?? 0}</span>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block font-sans">Security</span>
+                              <span className="font-bold text-rose-700">{unifiedSummary.findingsByCategory['SECURITY'] ?? 0}</span>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                              <span className="text-[10px] text-slate-400 block font-sans">Performance</span>
+                              <span className="font-bold text-amber-700">{unifiedSummary.findingsByCategory['PERFORMANCE'] ?? 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analyzer Execution Status Pills */}
+                      {unifiedSummary?.completedAnalyzers && (
+                        <div className="pt-1">
+                          <span className="text-xs font-semibold text-slate-700 block mb-1.5 font-sans">Executed Static Analyzers</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {unifiedSummary.completedAnalyzers.map((eng, idx) => (
+                              <Badge key={idx} variant="ready" size="sm">
+                                ✓ {eng}
+                              </Badge>
+                            ))}
+                            {unifiedSummary.failedAnalyzers?.map((eng, idx) => (
+                              <Badge key={idx} variant="critical" size="sm">
+                                ✗ {eng} FAILED
+                              </Badge>
+                            ))}
+                            {unifiedSummary.skippedAnalyzers?.map((eng, idx) => (
+                              <Badge key={idx} variant="neutral" size="sm">
+                                {eng} SKIPPED
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-100">
+                        {unifiedSummary?.disclaimer || "Unified analysis is static and heuristic. It aggregates findings across all executed static analyzers without measuring runtime performance, executing code, or scoring release readiness."}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Specialized Analyzers Overview Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Findings Summary Card */}
                     <Card>

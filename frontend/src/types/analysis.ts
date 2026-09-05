@@ -115,6 +115,24 @@ export interface PerformanceSummary {
   disclaimer: string;
 }
 
+export interface UnifiedAnalysisSummary {
+  totalFindings: number;
+  highFindings: number;
+  mediumFindings: number;
+  lowFindings: number;
+  infoFindings: number;
+  findingsByCategory: Record<string, number>;
+  findingsBySeverity: Record<string, number>;
+  affectedFiles: number;
+  analyzedFiles: number;
+  completedAnalyzers: string[];
+  failedAnalyzers: string[];
+  skippedAnalyzers: string[];
+  completeness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  warnings: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -133,6 +151,7 @@ export interface AnalysisResponse {
   dependencySummary?: DependencySummary;
   securitySummary?: SecuritySummary;
   performanceSummary?: PerformanceSummary;
+  unifiedAnalysisSummary?: UnifiedAnalysisSummary;
   message: string;
 }
 

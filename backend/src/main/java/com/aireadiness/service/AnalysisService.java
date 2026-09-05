@@ -117,66 +117,126 @@ public class AnalysisService {
         Analysis saved = analysisRepository.save(analysis);
 
         List<String> combinedWarnings = new ArrayList<>(profile.getDetectionWarnings());
-        List<Finding> allFindings = new ArrayList<>();
+        List<Finding> rawFindings = new ArrayList<>();
+
+        List<String> completedAnalyzers = new ArrayList<>();
+        List<String> failedAnalyzers = new ArrayList<>();
+        List<String> skippedAnalyzers = new ArrayList<>();
+
+        // Track PROJECT_DETECTION as completed
+        completedAnalyzers.add("PROJECT_DETECTION");
 
         // 7. Execute Static Code Quality Analyzer (Part 8)
         if (plan.getAnalyzers() != null && plan.getAnalyzers().contains("CODE_QUALITY")) {
-            List<Finding> qualityFindings = codeQualityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
-            if (qualityFindings != null) {
-                allFindings.addAll(qualityFindings);
+            try {
+                List<Finding> qualityFindings = codeQualityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+                if (qualityFindings != null) {
+                    rawFindings.addAll(qualityFindings);
+                }
+                completedAnalyzers.add("CODE_QUALITY");
+            } catch (Exception e) {
+                failedAnalyzers.add("CODE_QUALITY");
+                combinedWarnings.add("Code Quality analysis failed: " + e.getMessage());
             }
+        } else {
+            skippedAnalyzers.add("CODE_QUALITY");
         }
 
         // 8. Execute Static Testing Analyzer (Part 9)
         if (plan.getAnalyzers() != null && plan.getAnalyzers().contains("TESTING")) {
-            List<Finding> testingFindings = testingAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
-            if (testingFindings != null) {
-                allFindings.addAll(testingFindings);
+            try {
+                List<Finding> testingFindings = testingAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+                if (testingFindings != null) {
+                    rawFindings.addAll(testingFindings);
+                }
+                saved.setTestingSummary(testingAnalyzer.getLastSummary());
+                completedAnalyzers.add("TESTING");
+            } catch (Exception e) {
+                failedAnalyzers.add("TESTING");
+                combinedWarnings.add("Testing analysis failed: " + e.getMessage());
             }
-            saved.setTestingSummary(testingAnalyzer.getLastSummary());
+        } else {
+            skippedAnalyzers.add("TESTING");
         }
 
         // 9. Execute Static Dependency Analyzer (Part 10)
         if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(dependencyAnalyzer.getType())) {
-            List<Finding> dependencyFindings = dependencyAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
-            if (dependencyFindings != null) {
-                allFindings.addAll(dependencyFindings);
+            try {
+                List<Finding> dependencyFindings = dependencyAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+                if (dependencyFindings != null) {
+                    rawFindings.addAll(dependencyFindings);
+                }
+                saved.setDependencySummary(dependencyAnalyzer.getLastSummary());
+                completedAnalyzers.add(dependencyAnalyzer.getType());
+            } catch (Exception e) {
+                failedAnalyzers.add(dependencyAnalyzer.getType());
+                combinedWarnings.add("Dependency analysis failed: " + e.getMessage());
             }
-            saved.setDependencySummary(dependencyAnalyzer.getLastSummary());
+        } else {
+            skippedAnalyzers.add(dependencyAnalyzer.getType());
         }
 
         // 10. Execute Static Security Analyzer (Part 11)
         if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(securityAnalyzer.getType())) {
-            List<Finding> securityFindings = securityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
-            if (securityFindings != null) {
-                allFindings.addAll(securityFindings);
+            try {
+                List<Finding> securityFindings = securityAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+                if (securityFindings != null) {
+                    rawFindings.addAll(securityFindings);
+                }
+                saved.setSecuritySummary(securityAnalyzer.getLastSummary());
+                completedAnalyzers.add(securityAnalyzer.getType());
+            } catch (Exception e) {
+                failedAnalyzers.add(securityAnalyzer.getType());
+                combinedWarnings.add("Security analysis failed: " + e.getMessage());
             }
-            saved.setSecuritySummary(securityAnalyzer.getLastSummary());
+        } else {
+            skippedAnalyzers.add(securityAnalyzer.getType());
         }
 
         // 11. Execute Static Performance Analyzer (Part 12)
         if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(performanceAnalyzer.getType())) {
-            List<Finding> performanceFindings = performanceAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
-            if (performanceFindings != null) {
-                allFindings.addAll(performanceFindings);
+            try {
+                List<Finding> performanceFindings = performanceAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+                if (performanceFindings != null) {
+                    rawFindings.addAll(performanceFindings);
+                }
+                saved.setPerformanceSummary(performanceAnalyzer.getLastSummary());
+                completedAnalyzers.add(performanceAnalyzer.getType());
+            } catch (Exception e) {
+                failedAnalyzers.add(performanceAnalyzer.getType());
+                combinedWarnings.add("Performance analysis failed: " + e.getMessage());
             }
-            saved.setPerformanceSummary(performanceAnalyzer.getLastSummary());
+        } else {
+            skippedAnalyzers.add(performanceAnalyzer.getType());
         }
 
-        allFindings.forEach(f -> f.setAnalysisId(saved.getId()));
-        saved.setFindings(allFindings);
+        // 12. PART 13 — UNIFIED ANALYSIS
+        List<Finding> unifiedFindings = deduplicateAndSortFindings(rawFindings, saved.getId());
+        UnifiedAnalysisSummary unifiedSummary = buildUnifiedSummary(
+                unifiedFindings,
+                profile,
+                saved,
+                upload.getUploadMode(),
+                completedAnalyzers,
+                failedAnalyzers,
+                skippedAnalyzers,
+                combinedWarnings
+        );
+
+        saved.setFindings(unifiedFindings);
         saved.setWarnings(combinedWarnings);
+        saved.setUnifiedAnalysisSummary(unifiedSummary);
         saved.setStatus("COMPLETED");
         saved.setCompletedAt(Instant.now());
 
         Analysis finalSaved = analysisRepository.save(saved);
 
-        // Keep release READY_FOR_ANALYSIS until the complete analysis pipeline is implemented.
+        // Keep release READY_FOR_ANALYSIS until readiness scoring pipeline is implemented in Part 15.
         release.setStatus("READY_FOR_ANALYSIS");
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, security, and performance analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, security, performance, and unified analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
@@ -198,8 +258,177 @@ public class AnalysisService {
         return mapToResponse(analysis, "Latest analysis record retrieved successfully.");
     }
 
+    private List<Finding> deduplicateAndSortFindings(List<Finding> rawFindings, String analysisId) {
+        Set<String> seenKeys = new HashSet<>();
+        List<Finding> deduplicated = new ArrayList<>();
+
+        for (Finding f : rawFindings) {
+            if (f == null) continue;
+            f.setAnalysisId(analysisId);
+
+            // Normalize category
+            if (f.getCategory() == null || f.getCategory().trim().isEmpty()) {
+                f.setCategory("CODE_QUALITY");
+            } else if ("DEPENDENCIES".equalsIgnoreCase(f.getCategory())) {
+                f.setCategory("DEPENDENCY");
+            } else {
+                f.setCategory(f.getCategory().toUpperCase());
+            }
+
+            // Normalize severity
+            if (f.getSeverity() == null || f.getSeverity().trim().isEmpty()) {
+                f.setSeverity("MEDIUM");
+            } else {
+                String sev = f.getSeverity().toUpperCase();
+                if ("CRITICAL".equals(sev)) {
+                    sev = "HIGH";
+                }
+                f.setSeverity(sev);
+            }
+
+            String ruleId = f.getRuleId() != null ? f.getRuleId() : "";
+            String filePath = f.getFilePath() != null ? f.getFilePath() : "";
+            int line = f.getLineNumber() != null ? f.getLineNumber() : 0;
+            int evidenceHash = f.getEvidence() != null ? f.getEvidence().hashCode() : 0;
+
+            String key = analysisId + ":" + ruleId + ":" + filePath + ":" + line + ":" + evidenceHash;
+            if (seenKeys.add(key)) {
+                deduplicated.add(f);
+            }
+        }
+
+        deduplicated.sort((f1, f2) -> {
+            int r1 = getSeverityRank(f1.getSeverity());
+            int r2 = getSeverityRank(f2.getSeverity());
+            if (r1 != r2) return Integer.compare(r1, r2);
+
+            int catComp = Objects.toString(f1.getCategory(), "").compareTo(Objects.toString(f2.getCategory(), ""));
+            if (catComp != 0) return catComp;
+
+            int pathComp = Objects.toString(f1.getFilePath(), "").compareTo(Objects.toString(f2.getFilePath(), ""));
+            if (pathComp != 0) return pathComp;
+
+            int line1 = f1.getLineNumber() != null ? f1.getLineNumber() : 0;
+            int line2 = f2.getLineNumber() != null ? f2.getLineNumber() : 0;
+            if (line1 != line2) return Integer.compare(line1, line2);
+
+            return Objects.toString(f1.getRuleId(), "").compareTo(Objects.toString(f2.getRuleId(), ""));
+        });
+
+        return deduplicated;
+    }
+
+    private int getSeverityRank(String severity) {
+        if (severity == null) return 2;
+        switch (severity.toUpperCase()) {
+            case "HIGH":
+                return 1;
+            case "MEDIUM":
+                return 2;
+            case "LOW":
+                return 3;
+            case "INFO":
+                return 4;
+            default:
+                return 5;
+        }
+    }
+
+    private UnifiedAnalysisSummary buildUnifiedSummary(
+            List<Finding> unifiedFindings,
+            ProjectProfile profile,
+            Analysis analysis,
+            String uploadMode,
+            List<String> completedAnalyzers,
+            List<String> failedAnalyzers,
+            List<String> skippedAnalyzers,
+            List<String> warnings
+    ) {
+        int high = 0, medium = 0, low = 0, info = 0;
+        Map<String, Integer> categoryCounts = new LinkedHashMap<>();
+        categoryCounts.put("CODE_QUALITY", 0);
+        categoryCounts.put("TESTING", 0);
+        categoryCounts.put("DEPENDENCY", 0);
+        categoryCounts.put("SECURITY", 0);
+        categoryCounts.put("PERFORMANCE", 0);
+
+        Map<String, Integer> severityCounts = new LinkedHashMap<>();
+        severityCounts.put("HIGH", 0);
+        severityCounts.put("MEDIUM", 0);
+        severityCounts.put("LOW", 0);
+        severityCounts.put("INFO", 0);
+
+        Set<String> affectedFilesSet = new HashSet<>();
+
+        for (Finding f : unifiedFindings) {
+            String sev = f.getSeverity();
+            if ("HIGH".equalsIgnoreCase(sev)) {
+                high++;
+                severityCounts.put("HIGH", severityCounts.getOrDefault("HIGH", 0) + 1);
+            } else if ("MEDIUM".equalsIgnoreCase(sev)) {
+                medium++;
+                severityCounts.put("MEDIUM", severityCounts.getOrDefault("MEDIUM", 0) + 1);
+            } else if ("LOW".equalsIgnoreCase(sev)) {
+                low++;
+                severityCounts.put("LOW", severityCounts.getOrDefault("LOW", 0) + 1);
+            } else if ("INFO".equalsIgnoreCase(sev)) {
+                info++;
+                severityCounts.put("INFO", severityCounts.getOrDefault("INFO", 0) + 1);
+            }
+
+            String cat = f.getCategory();
+            if (cat != null) {
+                categoryCounts.put(cat, categoryCounts.getOrDefault(cat, 0) + 1);
+            }
+
+            if (f.getFilePath() != null && !f.getFilePath().trim().isEmpty()) {
+                affectedFilesSet.add(f.getFilePath().trim());
+            }
+        }
+
+        int analyzedFiles = 0;
+        if (profile != null && profile.getProjectStructure() != null) {
+            analyzedFiles = profile.getProjectStructure().getSourceFileCount();
+        }
+        if (analyzedFiles == 0 && analysis.getPerformanceSummary() != null) {
+            analyzedFiles = analysis.getPerformanceSummary().getAnalyzedSourceFiles();
+        }
+
+        String completeness = "UNKNOWN";
+        if (profile != null && "UNKNOWN".equalsIgnoreCase(profile.getPrimaryLanguage()) && "UNKNOWN".equalsIgnoreCase(profile.getProjectType())) {
+            completeness = "UNKNOWN";
+        } else if ("SELECTED_CONTENT".equalsIgnoreCase(uploadMode)) {
+            completeness = "PARTIAL";
+            if (!warnings.contains("Unified analysis is based only on the selected uploaded content. Additional findings may exist in files that were not uploaded.")) {
+                warnings.add("Unified analysis is based only on the selected uploaded content. Additional findings may exist in files that were not uploaded.");
+            }
+        } else if (!failedAnalyzers.isEmpty()) {
+            completeness = "PARTIAL";
+        } else if (analyzedFiles > 0 || !unifiedFindings.isEmpty()) {
+            completeness = "COMPLETE";
+        }
+
+        UnifiedAnalysisSummary summary = new UnifiedAnalysisSummary();
+        summary.setTotalFindings(unifiedFindings.size());
+        summary.setHighFindings(high);
+        summary.setMediumFindings(medium);
+        summary.setLowFindings(low);
+        summary.setInfoFindings(info);
+        summary.setFindingsByCategory(categoryCounts);
+        summary.setFindingsBySeverity(severityCounts);
+        summary.setAffectedFiles(affectedFilesSet.size());
+        summary.setAnalyzedFiles(analyzedFiles);
+        summary.setCompletedAnalyzers(completedAnalyzers);
+        summary.setFailedAnalyzers(failedAnalyzers);
+        summary.setSkippedAnalyzers(skippedAnalyzers);
+        summary.setCompleteness(completeness);
+        summary.setWarnings(new ArrayList<>(warnings));
+
+        return summary;
+    }
+
     private AnalysisResponse mapToResponse(Analysis analysis, String message) {
-        return new AnalysisResponse(
+        AnalysisResponse response = new AnalysisResponse(
                 analysis.getId(),
                 analysis.getProjectId(),
                 analysis.getReleaseId(),
@@ -219,5 +448,7 @@ public class AnalysisService {
                 analysis.getPerformanceSummary(),
                 message
         );
+        response.setUnifiedAnalysisSummary(analysis.getUnifiedAnalysisSummary());
+        return response;
     }
 }

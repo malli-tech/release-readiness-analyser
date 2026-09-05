@@ -7,6 +7,7 @@ import com.aireadiness.model.PerformanceSummary;
 import com.aireadiness.model.ProjectProfile;
 import com.aireadiness.model.SecuritySummary;
 import com.aireadiness.model.TestingSummary;
+import com.aireadiness.model.UnifiedAnalysisSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -209,11 +210,21 @@ public class AnalysisResponse {
         this.securitySummary = securitySummary;
     }
 
+    private UnifiedAnalysisSummary unifiedAnalysisSummary;
+
     public PerformanceSummary getPerformanceSummary() {
         return performanceSummary;
     }
 
     public void setPerformanceSummary(PerformanceSummary performanceSummary) {
         this.performanceSummary = performanceSummary;
+    }
+
+    public UnifiedAnalysisSummary getUnifiedAnalysisSummary() {
+        return unifiedAnalysisSummary;
+    }
+
+    public void setUnifiedAnalysisSummary(UnifiedAnalysisSummary unifiedAnalysisSummary) {
+        this.unifiedAnalysisSummary = unifiedAnalysisSummary;
     }
 }
