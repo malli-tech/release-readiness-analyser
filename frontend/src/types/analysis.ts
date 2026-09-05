@@ -102,6 +102,19 @@ export interface SecuritySummary {
   disclaimer: string;
 }
 
+export interface PerformanceSummary {
+  totalPerformanceFindings: number;
+  highSeverityFindings: number;
+  mediumSeverityFindings: number;
+  lowSeverityFindings: number;
+  detectedPerformanceIssues: number;
+  affectedFiles: number;
+  analyzedSourceFiles: number;
+  performanceCompleteness: 'COMPLETE' | 'PARTIAL' | 'UNKNOWN';
+  performanceWarnings: string[];
+  disclaimer: string;
+}
+
 export interface AnalysisResponse {
   id: string;
   projectId: string;
@@ -119,6 +132,7 @@ export interface AnalysisResponse {
   testingSummary?: TestingSummary;
   dependencySummary?: DependencySummary;
   securitySummary?: SecuritySummary;
+  performanceSummary?: PerformanceSummary;
   message: string;
 }
 

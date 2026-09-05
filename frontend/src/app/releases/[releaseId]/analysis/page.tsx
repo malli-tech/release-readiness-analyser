@@ -73,6 +73,7 @@ export default function ReleaseAnalysisPage() {
   const testingSummary = analysis?.testingSummary;
   const dependencySummary = analysis?.dependencySummary;
   const securitySummary = analysis?.securitySummary;
+  const performanceSummary = analysis?.performanceSummary;
   const findings: Finding[] = (analysis?.findings as Finding[]) || [];
 
   const highFindings = findings.filter((f) => f.severity === 'HIGH');
@@ -84,7 +85,8 @@ export default function ReleaseAnalysisPage() {
     const matchesCat =
       categoryFilter === 'ALL' ||
       f.category === categoryFilter ||
-      (categoryFilter === 'DEPENDENCIES' && (f.category === 'DEPENDENCY' || f.category === 'DEPENDENCIES'));
+      (categoryFilter === 'DEPENDENCIES' && (f.category === 'DEPENDENCY' || f.category === 'DEPENDENCIES')) ||
+      (categoryFilter === 'PERFORMANCE' && f.category === 'PERFORMANCE');
     return matchesSev && matchesCat;
   });
 
@@ -108,10 +110,10 @@ export default function ReleaseAnalysisPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      Code Quality, Testing, Dependency & Security Analyzer
+                      Code Quality, Testing, Dependency, Security & Performance Analyzer
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                      Static project inspection, code quality pattern evaluation, testing structure analysis, dependency management, and security vulnerability scanning.
+                      Static project inspection, code quality pattern evaluation, testing structure analysis, dependency management, security scanning, and static performance analysis.
                     </p>
                   </div>
                   {analysis && (
@@ -455,6 +457,67 @@ export default function ReleaseAnalysisPage() {
                         </p>
                       </CardContent>
                     </Card>
+
+                    {/* Static Performance Analysis Summary Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Cpu className="w-4 h-4 text-amber-600" />
+                            <CardTitle className="text-sm">Static Performance Analysis Summary</CardTitle>
+                          </div>
+                          {performanceSummary?.performanceCompleteness && (
+                            <Badge
+                              variant={
+                                performanceSummary.performanceCompleteness === 'COMPLETE'
+                                  ? 'ready'
+                                  : performanceSummary.performanceCompleteness === 'PARTIAL'
+                                  ? 'warning'
+                                  : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              {performanceSummary.performanceCompleteness}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <span className="text-[10px] text-slate-400 font-medium block">Total Findings</span>
+                            <span className="text-base font-bold text-slate-900">{performanceSummary?.totalPerformanceFindings ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-rose-50/50 rounded-xl border border-rose-100">
+                            <span className="text-[10px] text-rose-700 font-medium block">High Severity</span>
+                            <span className="text-base font-bold text-rose-700">{performanceSummary?.highSeverityFindings ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
+                            <span className="text-[10px] text-amber-700 font-medium block">Medium Severity</span>
+                            <span className="text-base font-bold text-amber-700">{performanceSummary?.mediumSeverityFindings ?? 0}</span>
+                          </div>
+                          <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <span className="text-[10px] text-blue-700 font-medium block">Low Severity</span>
+                            <span className="text-base font-bold text-blue-700">{performanceSummary?.lowSeverityFindings ?? 0}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] p-2.5 bg-slate-50 rounded-xl border border-slate-200 font-mono">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Affected Files</span>
+                            <span className="font-bold text-slate-800">{performanceSummary?.affectedFiles ?? 0}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Source Files Analyzed</span>
+                            <span className="font-bold text-indigo-700">{performanceSummary?.analyzedSourceFiles ?? 0}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 italic">
+                          {performanceSummary?.disclaimer || 'Performance analysis is static and heuristic. It does not measure runtime CPU, memory, latency, throughput, or actual production performance.'}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {/* Findings List Section */}
@@ -468,7 +531,7 @@ export default function ReleaseAnalysisPage() {
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           {/* Category Filters */}
                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-                            {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES', 'SECURITY'].map((cat) => (
+                            {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES', 'SECURITY', 'PERFORMANCE'].map((cat) => (
                               <button
                                 key={cat}
                                 onClick={() => setCategoryFilter(cat)}
@@ -720,7 +783,7 @@ export default function ReleaseAnalysisPage() {
                             <div key={idx} className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100 space-y-1">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-indigo-950 font-mono block">{analyzerKey}</span>
-                                {(analyzerKey === 'CODE_QUALITY' || analyzerKey === 'TESTING' || analyzerKey === 'DEPENDENCIES' || analyzerKey === 'SECURITY') && (
+                                {(analyzerKey === 'CODE_QUALITY' || analyzerKey === 'TESTING' || analyzerKey === 'DEPENDENCIES' || analyzerKey === 'SECURITY' || analyzerKey === 'PERFORMANCE') && (
                                   <Badge variant="ready" size="sm">Completed</Badge>
                                 )}
                               </div>

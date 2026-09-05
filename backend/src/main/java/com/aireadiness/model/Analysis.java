@@ -53,6 +53,8 @@ public class Analysis {
 
     private SecuritySummary securitySummary;
 
+    private PerformanceSummary performanceSummary;
+
     public Analysis() {
     }
 
@@ -207,5 +209,13 @@ public class Analysis {
 
     public void setSecuritySummary(SecuritySummary securitySummary) {
         this.securitySummary = securitySummary;
+    }
+
+    public PerformanceSummary getPerformanceSummary() {
+        return performanceSummary;
+    }
+
+    public void setPerformanceSummary(PerformanceSummary performanceSummary) {
+        this.performanceSummary = performanceSummary;
     }
 }

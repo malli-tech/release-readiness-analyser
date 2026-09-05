@@ -1,6 +1,7 @@
 package com.aireadiness.service;
 
 import com.aireadiness.analyzer.dependency.DependencyAnalyzer;
+import com.aireadiness.analyzer.performance.PerformanceAnalyzer;
 import com.aireadiness.analyzer.quality.CodeQualityAnalyzer;
 import com.aireadiness.analyzer.security.SecurityAnalyzer;
 import com.aireadiness.analyzer.testing.TestingAnalyzer;
@@ -32,6 +33,7 @@ public class AnalysisService {
     private final TestingAnalyzer testingAnalyzer;
     private final DependencyAnalyzer dependencyAnalyzer;
     private final SecurityAnalyzer securityAnalyzer;
+    private final PerformanceAnalyzer performanceAnalyzer;
 
     public AnalysisService(
             AnalysisRepository analysisRepository,
@@ -44,7 +46,8 @@ public class AnalysisService {
             CodeQualityAnalyzer codeQualityAnalyzer,
             TestingAnalyzer testingAnalyzer,
             DependencyAnalyzer dependencyAnalyzer,
-            SecurityAnalyzer securityAnalyzer
+            SecurityAnalyzer securityAnalyzer,
+            PerformanceAnalyzer performanceAnalyzer
     ) {
         this.analysisRepository = analysisRepository;
         this.releaseRepository = releaseRepository;
@@ -57,6 +60,7 @@ public class AnalysisService {
         this.testingAnalyzer = testingAnalyzer;
         this.dependencyAnalyzer = dependencyAnalyzer;
         this.securityAnalyzer = securityAnalyzer;
+        this.performanceAnalyzer = performanceAnalyzer;
     }
 
     private User getAuthenticatedUser() {
@@ -150,6 +154,15 @@ public class AnalysisService {
             saved.setSecuritySummary(securityAnalyzer.getLastSummary());
         }
 
+        // 11. Execute Static Performance Analyzer (Part 12)
+        if (plan.getAnalyzers() != null && plan.getAnalyzers().contains(performanceAnalyzer.getType())) {
+            List<Finding> performanceFindings = performanceAnalyzer.analyze(workspacePath, profile, saved.getId(), upload.getUploadMode(), combinedWarnings);
+            if (performanceFindings != null) {
+                allFindings.addAll(performanceFindings);
+            }
+            saved.setPerformanceSummary(performanceAnalyzer.getLastSummary());
+        }
+
         allFindings.forEach(f -> f.setAnalysisId(saved.getId()));
         saved.setFindings(allFindings);
         saved.setWarnings(combinedWarnings);
@@ -163,7 +176,7 @@ public class AnalysisService {
         release.setUpdatedAt(Instant.now());
         releaseRepository.save(release);
 
-        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, and security analysis completed successfully.");
+        return mapToResponse(finalSaved, "Static project detection, code quality, testing, dependency, security, and performance analysis completed successfully.");
     }
 
     public AnalysisResponse getAnalysisById(String analysisId) {
@@ -203,6 +216,7 @@ public class AnalysisService {
                 analysis.getTestingSummary(),
                 analysis.getDependencySummary(),
                 analysis.getSecuritySummary(),
+                analysis.getPerformanceSummary(),
                 message
         );
     }

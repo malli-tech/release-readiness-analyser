@@ -93,4 +93,29 @@ Part 11 implements a **100% static Security Analyzer** that evaluates source cod
 - **Strict Secret Redaction**: All secret values in findings, logs, evidence, and API responses are automatically replaced with `[REDACTED SECRET]`.
 - **Pipeline Lifecycle State**: Analysis finishes as `COMPLETED`. Release status remains `READY_FOR_ANALYSIS` (readiness scoring is deferred to Part 13).
 
+---
+
+## Part 12 Capabilities: Static Performance Analyzer
+
+Part 12 implements a **100% static, heuristic Performance Analyzer** that inspects source code for obvious performance-related code smells and inefficient programming patterns without executing project code, starting application servers, or running benchmarks.
+
+### Key Principles & Scope
+- **Static & Heuristic**: Performance findings are source-code-based static heuristics and recommendations. The analyzer does **not** claim to measure actual production response time, CPU utilization, memory consumption, or latency.
+- **Zero Runtime Measurement**: Performs **no** benchmarking, profiling, load testing, application startup, test execution, database execution, network calls, or process instrumentation.
+- **Zero Code Execution**: Uploaded application code is never started or executed in JVM, Node, Python, Go, .NET, or PHP runtimes.
+- **Selected-Content Semantics**: For `SELECTED_CONTENT` uploads, completeness is marked as `PARTIAL` with warnings indicating that non-uploaded files may contain additional unanalyzed performance patterns.
+
+### 10 Implemented Performance Rules
+1. `PERFORMANCE_N_PLUS_ONE_QUERY`: Detects obvious N+1 database access patterns inside loops (`HIGH` / `MEDIUM`).
+2. `PERFORMANCE_DATABASE_CALL_IN_LOOP`: Detects database/DAO/ORM query executions inside loops (`MEDIUM`).
+3. `PERFORMANCE_BLOCKING_CALL_IN_ASYNC_CONTEXT`: Detects blocking calls (e.g. `.block()`, `Future.get()`) inside reactive or asynchronous contexts (`HIGH` / `MEDIUM`).
+4. `PERFORMANCE_SLEEP_OR_WAIT`: Detects artificial thread/sleep delays (e.g. `Thread.sleep`, `time.sleep`) that block worker threads (`MEDIUM`).
+5. `PERFORMANCE_REPEATED_STRING_CONCATENATION`: Detects inefficient repeated string concatenation inside loops (`LOW` / `MEDIUM`).
+6. `PERFORMANCE_REGEX_IN_LOOP`: Detects repeated regex compilation (`Pattern.compile`, `re.compile`, `new RegExp`) inside loops (`MEDIUM`).
+7. `PERFORMANCE_REPEATED_COLLECTION_SCAN`: Detects repeated linear collection scans (`list.contains`, `list.indexOf`, stream filter) inside loops (`LOW` / `MEDIUM`).
+8. `PERFORMANCE_EXCESSIVE_NESTED_LOOPS`: Detects excessive loop nesting levels (3+ nested iteration levels) (`MEDIUM`).
+9. `PERFORMANCE_LARGE_COLLECTION_ALLOCATION_IN_LOOP`: Detects repeated collection allocations (`new ArrayList`, `new HashMap`) inside loop bodies (`LOW` / `MEDIUM`).
+10. `PERFORMANCE_REPEATED_EXPENSIVE_OPERATION`: Detects repeated expensive operations (e.g. `ObjectMapper` parsing/serialization) inside loops (`MEDIUM`).
+
+
 
