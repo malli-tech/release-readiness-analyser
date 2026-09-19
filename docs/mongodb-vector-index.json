@@ -1,0 +1,10 @@
+{
+  "description": "MongoDB Vector Index configuration for local MongoDB 8.2 knowledge_chunks collection",
+  "collection": "knowledge_chunks",
+  "indexName": "vector_index",
+  "database": "aireadiness",
+  "vectorField": "embedding",
+  "dimension": 1536,
+  "similarity": "cosine",
+  "mongoShellCommand": "db.knowledge_chunks.createIndex({ embedding: \"vector\" }, { name: \"vector_index\", vectorOptions: { type: \"hnsw\", similarity: \"cosine\", dimensions: 1536 } })"
+}

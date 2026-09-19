@@ -1,21 +1,13 @@
-package com.aireadiness.knowledge.model;
+package com.aireadiness.knowledge.dto;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.aireadiness.knowledge.model.KnowledgeCategory;
+import com.aireadiness.knowledge.model.KnowledgeChunk;
+import com.aireadiness.knowledge.model.SourceType;
 
-import java.time.Instant;
-import java.util.List;
+public class KnowledgeRetrievalResult {
 
-@Document(collection = "knowledge_chunks")
-public class KnowledgeChunk {
-
-    @Id
-    private String id;
-
-    @Indexed
+    private String chunkId;
     private String documentId;
-
     private int chunkIndex;
     private String text;
     private String title;
@@ -24,18 +16,33 @@ public class KnowledgeChunk {
     private KnowledgeCategory category;
     private String technology;
     private String version;
-    private List<Double> embedding;
-    private Instant createdAt = Instant.now();
+    private double similarityScore;
 
-    public KnowledgeChunk() {
+    public KnowledgeRetrievalResult() {
     }
 
-    public String getId() {
-        return id;
+    public static KnowledgeRetrievalResult fromChunk(KnowledgeChunk chunk, double similarityScore) {
+        KnowledgeRetrievalResult res = new KnowledgeRetrievalResult();
+        res.setChunkId(chunk.getId());
+        res.setDocumentId(chunk.getDocumentId());
+        res.setChunkIndex(chunk.getChunkIndex());
+        res.setText(chunk.getText());
+        res.setTitle(chunk.getTitle());
+        res.setSource(chunk.getSource());
+        res.setSourceType(chunk.getSourceType());
+        res.setCategory(chunk.getCategory());
+        res.setTechnology(chunk.getTechnology());
+        res.setVersion(chunk.getVersion());
+        res.setSimilarityScore(similarityScore);
+        return res;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getChunkId() {
+        return chunkId;
+    }
+
+    public void setChunkId(String chunkId) {
+        this.chunkId = chunkId;
     }
 
     public String getDocumentId() {
@@ -110,19 +117,11 @@ public class KnowledgeChunk {
         this.version = version;
     }
 
-    public List<Double> getEmbedding() {
-        return embedding;
+    public double getSimilarityScore() {
+        return similarityScore;
     }
 
-    public void setEmbedding(List<Double> embedding) {
-        this.embedding = embedding;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
+    public void setSimilarityScore(double similarityScore) {
+        this.similarityScore = similarityScore;
     }
 }

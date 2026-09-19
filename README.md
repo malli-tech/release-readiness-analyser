@@ -214,9 +214,45 @@ Part 16 implements a **trusted technical knowledge base foundation** for storing
   - `GET /api/knowledge/documents`: Lists active knowledge documents. Returns `200 OK`.
   - `GET /api/knowledge/documents/{id}`: Retrieves a specific document by ID. Returns `200 OK` or `404 Not Found`.
   - `GET /api/knowledge/documents/{id}/chunks`: Retrieves chunks for a document ordered by `chunkIndex`. Returns `200 OK`.
-- **Zero External Network / Zero Process Execution**:
-  - No external web scrapers, URL fetches, or network calls.
-  - No vector databases, embeddings, or LLM/AI calls (retrieval and RAG vectors deferred to Part 17).
+- **Zero Process Execution**: Operates without dynamic reflection, script execution, or process invocation.
+
+---
+
+## Part 17 Capabilities: RAG Retrieval
+
+Part 17 implements **semantic retrieval** over the trusted knowledge base foundation built in Part 16, utilizing vector embeddings and local MongoDB vector search without generating AI/LLM text responses.
+
+### Key Capabilities & Architectural Scope
+- **Embedding Abstraction (`EmbeddingService` & `OpenAIEmbeddingService`)**:
+  - Encapsulates vector embedding generation behind the `EmbeddingService` interface.
+  - Implements `OpenAIEmbeddingService` using Spring's `RestClient` targeting OpenAI's embeddings API (`text-embedding-3-small`, default 1536 dimensions).
+  - Securely configured via `OPENAI_API_KEY` environment variable. Never logs, prints, or exposes the API key in responses, logs, or repository files.
+  - Throws explicit `IllegalStateException` if `OPENAI_API_KEY` is absent when embedding generation is invoked.
+- **Vector Storage on Knowledge Chunks**:
+  - Extends `KnowledgeChunk` domain entity to store vector embeddings (`List<Double> embedding`).
+  - Preserves all document metadata inheritance (`documentId`, `chunkIndex`, `title`, `source`, `category`, `technology`, `version`).
+- **Embedding During Ingestion & Re-Embedding**:
+  - Document ingestion pipeline: `Document -> Normalize -> Chunk -> Embed Batch -> Persist Chunks`.
+  - Atomic rollback: if vector embedding generation or persistence fails, created chunks and saved document records are cleaned up.
+  - Re-embedding support: `reEmbedDocument(documentId)` re-generates and updates embeddings for existing active documents.
+- **MongoDB Vector Search & Cosine Similarity (`KnowledgeRetrievalService`)**:
+  - Connects to local MongoDB 8.2 (`knowledge_chunks` collection, `embedding` field, 1536 dimensions).
+  - Computes exact Cosine Similarity ($\frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \|\mathbf{v}\|}$) between query vector and candidate chunk vectors.
+  - Higher similarity score indicates greater semantic alignment according to the vector model.
+  - Supports pre-filtering by `category`, `technology` (case-insensitive regex match), and `version`.
+- **Top-K Retrieval & Deterministic Sorting**:
+  - Configurable `topK` parameter (min 1, max 20, default 5).
+  - Deterministically sorts results: `similarityScore` DESC -> `documentId` ASC -> `chunkIndex` ASC.
+- **Deterministic Query Builder (`RetrievalQueryBuilder`)**:
+  - Formats retrieval query strings deterministically from finding attributes (`category`, `ruleId`, `severity`, `technology`, `filePath`).
+  - Contains zero LLM/AI prompt generation logic.
+- **REST API (`KnowledgeController`)**:
+  - `POST /api/knowledge/retrieve`: Accepts `query`, optional `category`, `technology`, `version`, `topK`. Returns `200 OK` with top-K `KnowledgeRetrievalResult` items and similarity scores.
+- **Security & Non-Execution Boundaries**:
+  - **Zero LLM / Zero Chat Completions**: Part 17 strictly retrieves knowledge chunks and does **not** call chat/completion models or generate AI explanations (deferred to Part 18).
+  - **Zero Source Code Transmission**: Uploaded user project code is **never sent to OpenAI** or external APIs.
+  - **Zero Process Execution**: No `Runtime.exec()`, `ProcessBuilder`, shell scripts, or dynamic code execution.
+
 
 
 

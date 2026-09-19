@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class KnowledgeIngestionService {
@@ -19,17 +20,20 @@ public class KnowledgeIngestionService {
     private final KnowledgeChunkRepository chunkRepository;
     private final KnowledgeTextNormalizer textNormalizer;
     private final KnowledgeChunker chunker;
+    private final EmbeddingService embeddingService;
 
     public KnowledgeIngestionService(
             KnowledgeDocumentRepository documentRepository,
             KnowledgeChunkRepository chunkRepository,
             KnowledgeTextNormalizer textNormalizer,
-            KnowledgeChunker chunker
+            KnowledgeChunker chunker,
+            EmbeddingService embeddingService
     ) {
         this.documentRepository = documentRepository;
         this.chunkRepository = chunkRepository;
         this.textNormalizer = textNormalizer;
         this.chunker = chunker;
+        this.embeddingService = embeddingService;
     }
 
     public KnowledgeDocument ingestDocument(CreateDocumentRequest request) {
@@ -64,7 +68,21 @@ public class KnowledgeIngestionService {
                 throw new IllegalStateException("Failed to generate knowledge chunks from normalized content");
             }
 
-            // Save chunks
+            // Generate embeddings for all chunks before persistence
+            List<String> chunkTexts = chunks.stream()
+                    .map(KnowledgeChunk::getText)
+                    .collect(Collectors.toList());
+            List<List<Double>> embeddings = embeddingService.embedBatch(chunkTexts);
+
+            if (embeddings == null || embeddings.size() != chunks.size()) {
+                throw new IllegalStateException("Generated embeddings count does not match chunks count");
+            }
+
+            for (int i = 0; i < chunks.size(); i++) {
+                chunks.get(i).setEmbedding(embeddings.get(i));
+            }
+
+            // Save chunks with embeddings
             chunkRepository.saveAll(chunks);
 
             // Update chunk count on document
@@ -72,7 +90,7 @@ public class KnowledgeIngestionService {
             savedDoc.setUpdatedAt(Instant.now());
             return documentRepository.save(savedDoc);
         } catch (Exception e) {
-            // Atomic rollback: Delete document if chunking or chunk persistence fails
+            // Atomic rollback: Delete document if chunking, embedding generation, or persistence fails
             try {
                 chunkRepository.deleteByDocumentId(savedDoc.getId());
                 documentRepository.deleteById(savedDoc.getId());
@@ -82,8 +100,34 @@ public class KnowledgeIngestionService {
             if (e instanceof IllegalArgumentException || e instanceof IllegalStateException) {
                 throw e;
             }
-            throw new RuntimeException("Knowledge document ingestion failed during chunking/persistence: " + e.getMessage(), e);
+            throw new RuntimeException("Knowledge document ingestion failed during chunking/embedding/persistence: " + e.getMessage(), e);
         }
+    }
+
+    public void reEmbedDocument(String documentId) {
+        KnowledgeDocument doc = getDocumentById(documentId);
+        List<KnowledgeChunk> chunks = chunkRepository.findByDocumentIdOrderByChunkIndexAsc(documentId);
+
+        if (chunks.isEmpty()) {
+            return;
+        }
+
+        List<String> chunkTexts = chunks.stream()
+                .map(KnowledgeChunk::getText)
+                .collect(Collectors.toList());
+        List<List<Double>> embeddings = embeddingService.embedBatch(chunkTexts);
+
+        if (embeddings == null || embeddings.size() != chunks.size()) {
+            throw new IllegalStateException("Re-embedding generated vector count does not match chunk count for document: " + documentId);
+        }
+
+        for (int i = 0; i < chunks.size(); i++) {
+            chunks.get(i).setEmbedding(embeddings.get(i));
+        }
+
+        chunkRepository.saveAll(chunks);
+        doc.setUpdatedAt(Instant.now());
+        documentRepository.save(doc);
     }
 
     public KnowledgeDocument getDocumentById(String id) {

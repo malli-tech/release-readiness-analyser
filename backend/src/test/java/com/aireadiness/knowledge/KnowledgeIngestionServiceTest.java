@@ -5,6 +5,7 @@ import com.aireadiness.knowledge.dto.CreateDocumentRequest;
 import com.aireadiness.knowledge.model.*;
 import com.aireadiness.knowledge.repository.KnowledgeChunkRepository;
 import com.aireadiness.knowledge.repository.KnowledgeDocumentRepository;
+import com.aireadiness.knowledge.service.EmbeddingService;
 import com.aireadiness.knowledge.service.KnowledgeIngestionService;
 import com.aireadiness.knowledge.util.KnowledgeChunker;
 import com.aireadiness.knowledge.util.KnowledgeTextNormalizer;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,9 @@ public class KnowledgeIngestionServiceTest {
 
     @Mock
     private KnowledgeChunkRepository chunkRepository;
+
+    @Mock
+    private EmbeddingService embeddingService;
 
     private KnowledgeTextNormalizer textNormalizer;
     private KnowledgeChunker chunker;
@@ -44,7 +49,8 @@ public class KnowledgeIngestionServiceTest {
                 documentRepository,
                 chunkRepository,
                 textNormalizer,
-                chunker
+                chunker,
+                embeddingService
         );
     }
 
@@ -62,7 +68,7 @@ public class KnowledgeIngestionServiceTest {
     }
 
     @Test
-    @DisplayName("1. Successful document ingestion persists document and generated chunks")
+    @DisplayName("1. Successful document ingestion persists document and generated chunks with embeddings")
     public void testIngestDocumentSuccess() {
         CreateDocumentRequest request = createValidRequest();
 
@@ -74,6 +80,8 @@ public class KnowledgeIngestionServiceTest {
             return doc;
         });
 
+        when(embeddingService.embedBatch(anyList())).thenReturn(List.of(List.of(0.1, 0.2, 0.3)));
+
         KnowledgeDocument result = ingestionService.ingestDocument(request);
 
         assertNotNull(result);
@@ -83,6 +91,7 @@ public class KnowledgeIngestionServiceTest {
         assertEquals(1, result.getChunkCount());
 
         verify(documentRepository, times(2)).save(any(KnowledgeDocument.class));
+        verify(embeddingService, times(1)).embedBatch(anyList());
         verify(chunkRepository, times(1)).saveAll(anyList());
     }
 
@@ -123,7 +132,7 @@ public class KnowledgeIngestionServiceTest {
             return doc;
         });
 
-        when(chunkRepository.saveAll(anyList())).thenThrow(new RuntimeException("Database error saving chunks"));
+        when(embeddingService.embedBatch(anyList())).thenThrow(new RuntimeException("Embedding generation failed"));
 
         assertThrows(RuntimeException.class, () -> ingestionService.ingestDocument(request));
 
@@ -172,6 +181,28 @@ public class KnowledgeIngestionServiceTest {
         ingestionService.deactivateDocument("doc-deactivate");
 
         assertEquals(KnowledgeDocumentStatus.INACTIVE, doc.getStatus());
+        verify(documentRepository, times(1)).save(doc);
+    }
+
+    @Test
+    @DisplayName("7. Re-embed document updates existing chunk embeddings")
+    public void testReEmbedDocument() {
+        KnowledgeDocument doc = new KnowledgeDocument();
+        doc.setId("doc-reembed");
+
+        KnowledgeChunk chunk = new KnowledgeChunk();
+        chunk.setId("chk-1");
+        chunk.setDocumentId("doc-reembed");
+        chunk.setText("Chunk text to re-embed");
+
+        when(documentRepository.findById("doc-reembed")).thenReturn(Optional.of(doc));
+        when(chunkRepository.findByDocumentIdOrderByChunkIndexAsc("doc-reembed")).thenReturn(List.of(chunk));
+        when(embeddingService.embedBatch(List.of("Chunk text to re-embed"))).thenReturn(List.of(List.of(0.9, 0.8, 0.7)));
+
+        ingestionService.reEmbedDocument("doc-reembed");
+
+        assertEquals(List.of(0.9, 0.8, 0.7), chunk.getEmbedding());
+        verify(chunkRepository, times(1)).saveAll(List.of(chunk));
         verify(documentRepository, times(1)).save(doc);
     }
 }

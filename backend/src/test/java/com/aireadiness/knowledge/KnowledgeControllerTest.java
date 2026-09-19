@@ -2,9 +2,10 @@ package com.aireadiness.knowledge;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aireadiness.exception.ResourceNotFoundException;
-import com.aireadiness.knowledge.dto.CreateDocumentRequest;
+import com.aireadiness.knowledge.dto.*;
 import com.aireadiness.knowledge.model.*;
 import com.aireadiness.knowledge.service.KnowledgeIngestionService;
+import com.aireadiness.knowledge.service.KnowledgeRetrievalService;
 import com.aireadiness.service.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ public class KnowledgeControllerTest {
 
     @MockBean
     private KnowledgeIngestionService ingestionService;
+
+    @MockBean
+    private KnowledgeRetrievalService retrievalService;
 
     @MockBean
     private JwtService jwtService;
@@ -182,5 +186,41 @@ public class KnowledgeControllerTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].chunkIndex").value(0))
                 .andExpect(jsonPath("$[1].chunkIndex").value(1));
+    }
+
+    @Test
+    @DisplayName("6. POST /api/knowledge/retrieve performs RAG retrieval (200 OK)")
+    public void testRetrieveKnowledgeSuccess() throws Exception {
+        String token = "valid.jwt.token";
+        mockAuth(token, "user@univ.edu");
+
+        KnowledgeRetrievalRequest req = new KnowledgeRetrievalRequest(
+                "SQL injection prevention Java",
+                KnowledgeCategory.SECURITY,
+                "Java",
+                null,
+                3
+        );
+
+        KnowledgeChunk chunk = createSampleChunk("doc-104", 0);
+        KnowledgeRetrievalResult item = KnowledgeRetrievalResult.fromChunk(chunk, 0.92);
+        KnowledgeRetrievalResponse response = new KnowledgeRetrievalResponse(
+                "SQL injection prevention Java",
+                3,
+                List.of(item)
+        );
+
+        when(retrievalService.retrieve(any(KnowledgeRetrievalRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/knowledge/retrieve")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.query").value("SQL injection prevention Java"))
+                .andExpect(jsonPath("$.topK").value(3))
+                .andExpect(jsonPath("$.results.length()").value(1))
+                .andExpect(jsonPath("$.results[0].chunkId").value("chk-0"))
+                .andExpect(jsonPath("$.results[0].similarityScore").value(0.92));
     }
 }

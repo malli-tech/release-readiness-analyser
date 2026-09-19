@@ -1,11 +1,10 @@
 package com.aireadiness.knowledge.controller;
 
-import com.aireadiness.knowledge.dto.CreateDocumentRequest;
-import com.aireadiness.knowledge.dto.KnowledgeChunkResponse;
-import com.aireadiness.knowledge.dto.KnowledgeDocumentResponse;
+import com.aireadiness.knowledge.dto.*;
 import com.aireadiness.knowledge.model.KnowledgeChunk;
 import com.aireadiness.knowledge.model.KnowledgeDocument;
 import com.aireadiness.knowledge.service.KnowledgeIngestionService;
+import com.aireadiness.knowledge.service.KnowledgeRetrievalService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +18,14 @@ import java.util.stream.Collectors;
 public class KnowledgeController {
 
     private final KnowledgeIngestionService ingestionService;
+    private final KnowledgeRetrievalService retrievalService;
 
-    public KnowledgeController(KnowledgeIngestionService ingestionService) {
+    public KnowledgeController(
+            KnowledgeIngestionService ingestionService,
+            KnowledgeRetrievalService retrievalService
+    ) {
         this.ingestionService = ingestionService;
+        this.retrievalService = retrievalService;
     }
 
     @PostMapping("/documents")
@@ -52,5 +56,11 @@ public class KnowledgeController {
                 .map(KnowledgeChunkResponse::fromDomain)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
+    }
+
+    @PostMapping("/retrieve")
+    public ResponseEntity<KnowledgeRetrievalResponse> retrieve(@Valid @RequestBody KnowledgeRetrievalRequest request) {
+        KnowledgeRetrievalResponse response = retrievalService.retrieve(request);
+        return ResponseEntity.ok(response);
     }
 }
