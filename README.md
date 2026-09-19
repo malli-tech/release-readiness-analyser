@@ -187,6 +187,38 @@ Part 15 implements a **100% static, deterministic Readiness Score Engine** (`rea
 - **Version Tracking**: Tagged with calculation version `readiness-v1`.
 - **Zero AI / Zero Code Execution**: Operates 100% statically without LLM calls, RAG pipelines, external network services, or code execution.
 
+---
+
+## Part 16 Capabilities: RAG Knowledge Base Foundation
+
+Part 16 implements a **trusted technical knowledge base foundation** for storing, structuring, normalizing, and chunking official documentation, release standards, security baselines, and architectural guidance in MongoDB.
+
+### Key Capabilities & Architectural Scope
+- **Trusted Domain Models**:
+  - `KnowledgeDocument`: Stores document metadata (title, source, sourceType, category, technology, version, status, content, chunkCount).
+  - `KnowledgeChunk`: Stores individual chunks derived from parent documents with full metadata inheritance.
+- **Supported Sources & Categories**:
+  - `SourceType`: `OFFICIAL_DOCUMENTATION`, `INTERNAL_STANDARD`, `SECURITY_POLICY`, `BEST_PRACTICES_GUIDE`, `RELEASE_CHECKLIST`.
+  - `KnowledgeCategory`: `SECURITY_BEST_PRACTICES`, `PERFORMANCE_OPTIMIZATION`, `CODE_QUALITY_STANDARDS`, `TESTING_STRATEGIES`, `DEPENDENCY_MANAGEMENT`, `RELEASE_COMPLIANCE`.
+- **Text Normalization (`KnowledgeTextNormalizer`)**:
+  - Strips zero-width characters, standardizes UTF-8 spaces, normalizes Windows (`\r\n`) and Mac (`\r`) line breaks to Unix (`\n`), trims trailing whitespace per line, and collapses excessive blank lines (max 2 consecutive newlines).
+- **Paragraph-Aware Chunking (`KnowledgeChunker`)**:
+  - Deterministically splits documents into searchable text chunks targeting ~1,800 characters (max 2,500 chars) with configurable ~200 character overlap.
+  - Respects paragraph boundaries (`\n\n`) and word boundaries without cutting words in half.
+  - Assigns 0-indexed chunk indices (`chunkIndex: 0, 1, 2...`) and preserves parent document metadata in every chunk.
+- **Atomic Ingestion & Persistence (`KnowledgeIngestionService`)**:
+  - Validates document inputs, normalizes content, saves document to generate ID, chunks text, and persists chunks.
+  - Includes atomic rollback: if chunking or chunk persistence fails, created chunks and saved document records are deleted to guarantee data consistency.
+- **REST Endpoints (`KnowledgeController`)**:
+  - `POST /api/knowledge/documents`: Ingests a new document, normalizes content, chunks, and persists. Returns `201 Created`.
+  - `GET /api/knowledge/documents`: Lists active knowledge documents. Returns `200 OK`.
+  - `GET /api/knowledge/documents/{id}`: Retrieves a specific document by ID. Returns `200 OK` or `404 Not Found`.
+  - `GET /api/knowledge/documents/{id}/chunks`: Retrieves chunks for a document ordered by `chunkIndex`. Returns `200 OK`.
+- **Zero External Network / Zero Process Execution**:
+  - No external web scrapers, URL fetches, or network calls.
+  - No vector databases, embeddings, or LLM/AI calls (retrieval and RAG vectors deferred to Part 17).
+
+
 
 
 
