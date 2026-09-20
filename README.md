@@ -279,3 +279,43 @@ Part 18 implements an **explanatory LLM / AI Review layer** that generates struc
   - `POST /api/analyses/{analysisId}/findings/{findingId}/ai-review`: Triggers AI review for a single finding.
   - `GET /api/analyses/{analysisId}/ai-reviews`: Lists AI reviews for an analysis.
   - `GET /api/analyses/{analysisId}/findings/{findingId}/ai-review`: Gets AI review for a finding.
+
+---
+
+## Part 19 Capabilities: Recommendations Foundation & Mapping Layer
+
+Part 19 implements the **foundational Recommendation domain model and 100% deterministic recommendation mapping engine** for the AI Release Readiness Analyzer.
+
+### Architecture & Conceptual Separation of Roles
+
+The platform enforces a strict conceptual distinction between core analysis components:
+
+- **Analyzer Finding**: *"What was observed"* — Fixed, authoritative static facts detected by static analyzers (`CODE_QUALITY`, `TESTING`, `DEPENDENCY`, `SECURITY`, `PERFORMANCE`).
+- **Recommendation**: *"What the developer can do about it"* — Actionable remediation guidance, priority, and implementation effort mapping derived deterministically from findings.
+- **Risk**: *"How much release risk the findings represent"* — Weighted Category Risk breakdowns and overall `RiskSummary` (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`, `UNKNOWN`).
+- **Readiness**: *"Overall release-readiness assessment"* — Deterministic 0.00–100.00 readiness score and release gating evaluation (`ReadinessScore`).
+
+> [!IMPORTANT]
+> Recommendations DO NOT alter, re-calculate, or override static analyzer findings, finding severities, risk points, or readiness scores.
+
+### Key Capabilities & Architectural Scope
+- **Recommendation Domain Model (`Recommendation`)**:
+  - Persisted in MongoDB `recommendations` collection with compound index `{ analysisId: 1, findingId: 1 }`.
+  - Holds `analysisId`, `findingId`, `ruleId`, `category`, `severity`, `title`, `summary`, `recommendedAction`, `priority`, `effort`, `status`, `filePath`, `lineNumber`, `createdAt`, `updatedAt`.
+- **Deterministic Enums**:
+  - `RecommendationPriority`: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`. Deterministically derived from finding severity and category (e.g., `CRITICAL` severity or `HIGH` security findings resolve to `CRITICAL` priority).
+  - `RecommendationEffort`: `LOW`, `MEDIUM`, `HIGH`. Estimated remediation effort classification based on rule complexity.
+  - `RecommendationStatus`: `OPEN`, `IN_PROGRESS`, `RESOLVED`, `IGNORED`.
+- **Comprehensive Template Catalog (`RecommendationTemplateCatalog`)**:
+  - Provides deterministic remediation guidance, summary, action, priority, and effort for **all 46 static analyzer rules** across 5 categories:
+    - Code Quality (10 rules)
+    - Testing (10 rules)
+    - Dependency (6 rules)
+    - Security (12 rules)
+    - Performance (10 rules)
+  - Supports rule lookups by canonical rule ID as well as human-readable rule title aliases.
+- **Deterministic Service Mapping (`RecommendationService`)**:
+  - Generates actionable `Recommendation` lists from `Analysis` findings without external network calls, LLM calls, RAG pipelines, or code execution.
+  - Guarantees 1-to-1 traceability from each recommendation back to its source `findingId` and `analysisId`.
+  - Handles zero findings (returns empty list), duplicate findings (deduplicates by `findingId`), and unsupported rules (appends diagnostic warning without failing analysis).
+  - Sorts recommendations deterministically by `Priority` -> `Category` -> `Rule ID` -> `Finding ID`.
