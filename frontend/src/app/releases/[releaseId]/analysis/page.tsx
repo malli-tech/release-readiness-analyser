@@ -13,6 +13,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { Finding } from '@/types/finding';
 import { AIReviewRecord } from '@/types/analysis';
+import { RecommendationsSection } from '@/components/analysis/RecommendationsSection';
 import { apiClient } from '@/lib/api';
 import {
   CheckCircle2,
@@ -941,6 +942,9 @@ export default function ReleaseAnalysisPage() {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Recommendations Section (Part 19) */}
+                  <RecommendationsSection analysisId={analysis.id} />
 
                   {/* Findings List Section */}
                   <Card>

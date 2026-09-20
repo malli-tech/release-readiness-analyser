@@ -90,3 +90,13 @@ export const apiClient = {
 export async function fetchHealth(): Promise<HealthResponse> {
   return apiClient.get<HealthResponse>('/api/health');
 }
+
+// Part 19 Recommendations API integration
+export async function fetchRecommendations(analysisId: string) {
+  return apiClient.get<import('@/types/recommendation').RecommendationRecord[]>(`/api/analyses/${analysisId}/recommendations`);
+}
+
+export async function fetchFindingRecommendation(analysisId: string, findingId: string) {
+  return apiClient.get<import('@/types/recommendation').RecommendationRecord>(`/api/analyses/${analysisId}/findings/${findingId}/recommendation`);
+}
+
