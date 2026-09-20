@@ -104,4 +104,10 @@ export async function fetchAllUserReleases() {
   return apiClient.get<import('@/types/release').Release[]>(`/api/releases`);
 }
 
+// Part 20 Results Dashboard API integration
+export async function fetchReleaseResults(releaseId: string) {
+  return apiClient.get<import('@/types/results').ReleaseResultsResponse>(`/api/releases/${releaseId}/results`);
+}
+
+
 
