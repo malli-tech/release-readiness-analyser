@@ -12,6 +12,8 @@ import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { Finding } from '@/types/finding';
+import { AIReviewRecord } from '@/types/analysis';
+import { apiClient } from '@/lib/api';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -38,21 +40,39 @@ export default function ReleaseAnalysisPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [aiReviews, setAiReviews] = useState<Record<string, AIReviewRecord>>({});
+  const [generatingReviews, setGeneratingReviews] = useState(false);
 
   const { loading, error, analysis, startAnalysis, getLatestAnalysis } = useAnalysis();
   const [initializing, setInitializing] = useState(true);
+
+  const fetchAiReviews = useCallback(async (analysisId: string) => {
+    try {
+      const reviews = await apiClient.get<AIReviewRecord[]>(`/api/analyses/${analysisId}/ai-reviews`);
+      const reviewMap: Record<string, AIReviewRecord> = {};
+      reviews.forEach((r) => {
+        reviewMap[r.findingId] = r;
+      });
+      setAiReviews(reviewMap);
+    } catch {
+      // Ignored if no reviews created yet
+    }
+  }, []);
 
   const loadAnalysis = useCallback(async () => {
     if (!releaseId) return;
     setInitializing(true);
     try {
-      await getLatestAnalysis(releaseId);
+      const data = await getLatestAnalysis(releaseId);
+      if (data?.id) {
+        fetchAiReviews(data.id);
+      }
     } catch {
       // Ignored if no analysis exists yet
     } finally {
       setInitializing(false);
     }
-  }, [releaseId, getLatestAnalysis]);
+  }, [releaseId, getLatestAnalysis, fetchAiReviews]);
 
   useEffect(() => {
     loadAnalysis();
@@ -61,9 +81,29 @@ export default function ReleaseAnalysisPage() {
   const handleStartAnalysis = async () => {
     if (!releaseId) return;
     try {
-      await startAnalysis(releaseId);
+      const data = await startAnalysis(releaseId);
+      if (data?.id) {
+        fetchAiReviews(data.id);
+      }
     } catch {
       // Error handled in hook state
+    }
+  };
+
+  const handleGenerateAiReviews = async () => {
+    if (!analysis?.id) return;
+    setGeneratingReviews(true);
+    try {
+      const reviews = await apiClient.post<AIReviewRecord[]>(`/api/analyses/${analysis.id}/ai-reviews`);
+      const reviewMap: Record<string, AIReviewRecord> = {};
+      reviews.forEach((r) => {
+        reviewMap[r.findingId] = r;
+      });
+      setAiReviews(reviewMap);
+    } catch {
+      // Error handled silently or status set to failed
+    } finally {
+      setGeneratingReviews(false);
     }
   };
 
@@ -911,6 +951,17 @@ export default function ReleaseAnalysisPage() {
                           <CardTitle className="text-sm">Static Findings List ({filteredFindings.length})</CardTitle>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {/* Generate AI Reviews Button */}
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleGenerateAiReviews}
+                            disabled={generatingReviews || findings.length === 0}
+                            leftIcon={<Sparkles className="w-3.5 h-3.5 text-amber-300" />}
+                          >
+                            {generatingReviews ? 'Generating AI Reviews...' : 'Generate AI Reviews'}
+                          </Button>
+
                           {/* Category Filters */}
                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                             {['ALL', 'CODE_QUALITY', 'TESTING', 'DEPENDENCIES', 'SECURITY', 'PERFORMANCE'].map((cat) => (
@@ -957,54 +1008,108 @@ export default function ReleaseAnalysisPage() {
                           </p>
                         </div>
                       ) : (
-                        filteredFindings.map((finding, idx) => (
-                          <div
-                            key={idx}
-                            className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition space-y-2.5"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Badge
-                                  variant={
-                                    finding.severity === 'HIGH'
-                                      ? 'critical'
-                                      : finding.severity === 'MEDIUM'
-                                      ? 'warning'
-                                      : 'info'
-                                  }
-                                  size="sm"
-                                >
-                                  {finding.severity}
-                                </Badge>
-                                <Badge variant="neutral" size="sm">
-                                  {finding.category || 'ANALYSIS'}
-                                </Badge>
-                                <h4 className="text-xs font-bold text-slate-900">{finding.title}</h4>
+                        filteredFindings.map((finding, idx) => {
+                          const aiRev = finding.id ? aiReviews[finding.id] : undefined;
+                          return (
+                            <div
+                              key={idx}
+                              className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition space-y-3"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Badge
+                                    variant={
+                                      finding.severity === 'HIGH'
+                                        ? 'critical'
+                                        : finding.severity === 'MEDIUM'
+                                        ? 'warning'
+                                        : 'info'
+                                    }
+                                    size="sm"
+                                  >
+                                    {finding.severity}
+                                  </Badge>
+                                  <Badge variant="neutral" size="sm">
+                                    {finding.category || 'ANALYSIS'}
+                                  </Badge>
+                                  <h4 className="text-xs font-bold text-slate-900">{finding.title}</h4>
+                                </div>
+                                <span className="font-mono text-[11px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 self-start sm:self-auto">
+                                  {finding.ruleId}
+                                </span>
                               </div>
-                              <span className="font-mono text-[11px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 self-start sm:self-auto">
-                                {finding.ruleId}
-                              </span>
-                            </div>
 
-                            <p className="text-xs text-slate-600 leading-relaxed">{finding.description}</p>
+                              <p className="text-xs text-slate-600 leading-relaxed">{finding.description}</p>
 
-                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
-                              <span className="text-slate-800 font-bold">
-                                {finding.filePath}
-                                {finding.lineNumber ? `:${finding.lineNumber}` : ''}
-                              </span>
-                              {finding.confidence && (
-                                <span className="text-slate-400">• Confidence: {finding.confidence}</span>
+                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
+                                <span className="text-slate-800 font-bold">
+                                  {finding.filePath}
+                                  {finding.lineNumber ? `:${finding.lineNumber}` : ''}
+                                </span>
+                                {finding.confidence && (
+                                  <span className="text-slate-400">• Confidence: {finding.confidence}</span>
+                                )}
+                              </div>
+
+                              {finding.evidence && (
+                                <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800">
+                                  {finding.evidence}
+                                </div>
+                              )}
+
+                              {/* AI Review Guidance Section */}
+                              {aiRev && (
+                                <div className="mt-3 p-3.5 rounded-xl bg-slate-900 text-slate-100 border border-purple-500/30 space-y-2.5">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className="w-4 h-4 text-purple-400" />
+                                      <span className="text-xs font-bold text-purple-300">
+                                        AI Explanation & Review Guidance (Non-Authoritative Explanation)
+                                      </span>
+                                    </div>
+                                    <Badge variant={aiRev.status === 'COMPLETED' ? 'ready' : aiRev.status === 'FAILED' ? 'critical' : 'warning'} size="sm">
+                                      {aiRev.status}
+                                    </Badge>
+                                  </div>
+
+                                  {aiRev.status === 'COMPLETED' && (
+                                    <>
+                                      <p className="text-xs text-slate-200 leading-relaxed font-sans">{aiRev.summary}</p>
+                                      {aiRev.whyItMatters && (
+                                        <div className="text-[11px] text-slate-300 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700">
+                                          <strong className="text-purple-300 block mb-0.5">Why It Matters:</strong>
+                                          <span>{aiRev.whyItMatters}</span>
+                                        </div>
+                                      )}
+                                      {aiRev.whatToReview && aiRev.whatToReview.length > 0 && (
+                                        <div className="text-[11px] text-slate-300">
+                                          <strong className="text-purple-300 block mb-1">What To Review:</strong>
+                                          <ul className="list-disc list-inside space-y-0.5">
+                                            {aiRev.whatToReview.map((item, i) => (
+                                              <li key={i}>{item}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {aiRev.suggestedFix && (
+                                        <div className="text-[11px] text-slate-300 bg-purple-950/40 p-2.5 rounded-lg border border-purple-800/40">
+                                          <strong className="text-purple-300 block mb-0.5">Suggested Guidance:</strong>
+                                          <span>{aiRev.suggestedFix}</span>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+
+                                  {aiRev.status === 'FAILED' && (
+                                    <div className="text-xs text-rose-300 bg-rose-950/30 p-2.5 rounded-lg border border-rose-800/40">
+                                      {aiRev.errorMessage || 'AI review generation failed for this finding.'}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
-
-                            {finding.evidence && (
-                              <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800">
-                                {finding.evidence}
-                              </div>
-                            )}
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </CardContent>
                   </Card>

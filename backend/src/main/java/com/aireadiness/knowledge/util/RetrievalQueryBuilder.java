@@ -52,6 +52,44 @@ public class RetrievalQueryBuilder {
         return String.join(" ", parts);
     }
 
+    public String buildQuery(KnowledgeCategory category, String ruleId, String severity, String title, String description, String technology, String framework) {
+        List<String> parts = new ArrayList<>();
+
+        if (category != null) {
+            parts.add(category.name().replace("_", " "));
+        }
+
+        if (ruleId != null && !ruleId.trim().isEmpty()) {
+            parts.add(ruleId.trim().replace("_", " "));
+        }
+
+        if (title != null && !title.trim().isEmpty()) {
+            parts.add(title.trim());
+        }
+
+        if (description != null && !description.trim().isEmpty()) {
+            parts.add(description.trim());
+        }
+
+        if (severity != null && !severity.trim().isEmpty()) {
+            parts.add(severity.trim().toUpperCase());
+        }
+
+        if (technology != null && !technology.trim().isEmpty()) {
+            parts.add(technology.trim());
+        }
+
+        if (framework != null && !framework.trim().isEmpty() && !framework.equalsIgnoreCase(technology)) {
+            parts.add(framework.trim());
+        }
+
+        if (parts.isEmpty()) {
+            return "general software engineering standards best practices";
+        }
+
+        return String.join(" ", parts);
+    }
+
     private String extractFileName(String path) {
         int lastSlash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         if (lastSlash >= 0 && lastSlash < path.length() - 1) {

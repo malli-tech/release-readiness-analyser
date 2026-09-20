@@ -247,6 +247,29 @@ export interface AIReview {
   blockers: string[];
 }
 
+export type AIReviewStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+export type AIReviewConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface AIReviewRecord {
+  id: string;
+  analysisId: string;
+  findingId: string;
+  ruleId: string;
+  category: string;
+  status: AIReviewStatus;
+  summary?: string;
+  whyItMatters?: string;
+  whatToReview?: string[];
+  suggestedFix?: string;
+  confidence?: AIReviewConfidence;
+  model?: string;
+  promptVersion?: string;
+  errorMessage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  disclaimer?: string;
+}
+
 export interface AnalysisResult {
   id: string;
   releaseId: string;

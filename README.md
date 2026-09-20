@@ -249,13 +249,33 @@ Part 17 implements **semantic retrieval** over the trusted knowledge base founda
 - **REST API (`KnowledgeController`)**:
   - `POST /api/knowledge/retrieve`: Accepts `query`, optional `category`, `technology`, `version`, `topK`. Returns `200 OK` with top-K `KnowledgeRetrievalResult` items and similarity scores.
 - **Security & Non-Execution Boundaries**:
-  - **Zero LLM / Zero Chat Completions**: Part 17 strictly retrieves knowledge chunks and does **not** call chat/completion models or generate AI explanations (deferred to Part 18).
+  - **Zero LLM / Zero Chat Completions in Part 17**: Part 17 strictly retrieves knowledge chunks and does **not** call chat/completion models or generate AI explanations (handed over to Part 18).
   - **Zero Source Code Transmission**: Uploaded user project code is **never sent to OpenAI** or external APIs.
   - **Zero Process Execution**: No `Runtime.exec()`, `ProcessBuilder`, shell scripts, or dynamic code execution.
 
+---
 
+## Part 18 Capabilities: LLM / AI Review Layer
 
+Part 18 implements an **explanatory LLM / AI Review layer** that generates structured educational risk explanations, code review guidance, and remediation pointers for static analyzer findings using OpenAI's Chat Completions API (`gpt-4o-mini`) and Part 17 RAG technical knowledge retrieval.
 
-
-
-
+### Key Capabilities & Architectural Scope
+- **LLM Abstraction (`LLMService` & `OpenAILLMService`)**:
+  - Service interface `LLMService` generating structured `AIReviewResult` objects.
+  - Implementation `OpenAILLMService` targeting OpenAI's Chat Completions API (`https://api.openai.com/v1/chat/completions`) using JSON mode (`response_format: {"type": "json_object"}`).
+  - Configurable via `OPENAI_API_KEY` (`openai.api-key`), `openai.llm.model` (`gpt-4o-mini`), `openai.llm.endpoint`, `openai.llm.timeout-ms` (`15000`), and `openai.llm.max-retries` (`2`).
+- **Prompt Builder & Injection Protections (`AIReviewPromptBuilder`)**:
+  - Assembles structured prompts with XML-like section delimiters (`<PROJECT_CONTEXT>`, `<FINDING_DATA>`, `<EVIDENCE>`, `<RETRIEVED_KNOWLEDGE>`, `<TASK>`).
+  - Implements **Prompt Injection Defense**: system instructions mandate treating uploaded source code, comments, and evidence strings strictly as passive untrusted data, ignoring any embedded instructions or prompt overrides.
+- **RAG Technical Knowledge Integration**:
+  - Reuses Part 17 `KnowledgeRetrievalService` and `RetrievalQueryBuilder` to fetch top-3 relevant knowledge base chunks for each finding.
+- **Status Isolation & Fault Tolerance**:
+  - If OpenAI API key is unconfigured, or calls fail, timeout, or return malformed JSON, the `AIReview` status is saved as `FAILED` with a safe error message.
+  - **The underlying `Analysis`, static findings, `RiskSummary`, and `ReadinessScore` remain 100% valid and completed** without being affected by AI review failures.
+- **Strict Non-Authoritative Boundary**:
+  - The LLM is strictly an explanatory layer. It cannot alter finding severity, rule IDs, risk scores, or readiness scores, nor can it claim source code was executed.
+- **REST Endpoints (`AIReviewController`)**:
+  - `POST /api/analyses/{analysisId}/ai-reviews`: Triggers AI reviews for findings in an analysis.
+  - `POST /api/analyses/{analysisId}/findings/{findingId}/ai-review`: Triggers AI review for a single finding.
+  - `GET /api/analyses/{analysisId}/ai-reviews`: Lists AI reviews for an analysis.
+  - `GET /api/analyses/{analysisId}/findings/{findingId}/ai-review`: Gets AI review for a finding.

@@ -52,4 +52,26 @@ public class RetrievalQueryBuilderTest {
         assertNotNull(query);
         assertFalse(query.trim().isEmpty());
     }
+
+    @Test
+    @DisplayName("4. AI-review query includes finding title & description and excludes file path")
+    public void testAIReviewQueryConstruction() {
+        String query = queryBuilder.buildQuery(
+                KnowledgeCategory.SECURITY,
+                "SECURITY_SQL_INJECTION",
+                "HIGH",
+                "SQL Injection Vulnerability",
+                "String concatenation in query creation",
+                "Java",
+                "Spring Boot"
+        );
+
+        assertTrue(query.contains("SQL Injection Vulnerability"));
+        assertTrue(query.contains("String concatenation in query creation"));
+        assertTrue(query.contains("Java"));
+        assertTrue(query.contains("Spring Boot"));
+        assertFalse(query.contains("UserRepository.java"));
+        assertFalse(query.contains("sk-"));
+        assertFalse(query.contains("OPENAI_API_KEY"));
+    }
 }
