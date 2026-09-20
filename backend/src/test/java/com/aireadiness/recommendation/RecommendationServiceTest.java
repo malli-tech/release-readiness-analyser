@@ -1,5 +1,6 @@
 package com.aireadiness.recommendation;
 
+import com.aireadiness.exception.ResourceNotFoundException;
 import com.aireadiness.model.Analysis;
 import com.aireadiness.model.Finding;
 import com.aireadiness.recommendation.catalog.RecommendationTemplateCatalog;
@@ -8,6 +9,7 @@ import com.aireadiness.recommendation.model.RecommendationPriority;
 import com.aireadiness.recommendation.model.RecommendationStatus;
 import com.aireadiness.recommendation.repository.RecommendationRepository;
 import com.aireadiness.recommendation.service.RecommendationService;
+import com.aireadiness.repository.AnalysisRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -31,12 +34,15 @@ public class RecommendationServiceTest {
     @Mock
     private RecommendationRepository recommendationRepository;
 
+    @Mock
+    private AnalysisRepository analysisRepository;
+
     private RecommendationService recommendationService;
 
     @BeforeEach
     public void setUp() {
         catalog = new RecommendationTemplateCatalog();
-        recommendationService = new RecommendationService(catalog, recommendationRepository);
+        recommendationService = new RecommendationService(catalog, recommendationRepository, analysisRepository);
     }
 
     @Test
@@ -176,5 +182,31 @@ public class RecommendationServiceTest {
         assertEquals(1, recs.size());
         assertEquals("ans-partial", recs.get(0).getAnalysisId());
         assertEquals("find-part-1", recs.get(0).getFindingId());
+    }
+
+    @Test
+    @DisplayName("7. Validates ownership when fetching recommendations for analysis")
+    public void testGetRecommendationsForAnalysisOwnershipCheck() {
+        Analysis analysis = new Analysis();
+        analysis.setId("ans-100");
+        analysis.setUserId("user-owner");
+
+        when(analysisRepository.findById("ans-100")).thenReturn(Optional.of(analysis));
+
+        assertThrows(ResourceNotFoundException.class, () ->
+                recommendationService.getRecommendationsForAnalysis("ans-100", "user-other"));
+    }
+
+    @Test
+    @DisplayName("8. Validates ownership when fetching recommendation for specific finding")
+    public void testGetRecommendationForFindingOwnershipCheck() {
+        Analysis analysis = new Analysis();
+        analysis.setId("ans-100");
+        analysis.setUserId("user-owner");
+
+        when(analysisRepository.findById("ans-100")).thenReturn(Optional.of(analysis));
+
+        assertThrows(ResourceNotFoundException.class, () ->
+                recommendationService.getRecommendationForFinding("ans-100", "find-1", "user-other"));
     }
 }
