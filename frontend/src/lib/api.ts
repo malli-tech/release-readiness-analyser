@@ -109,5 +109,8 @@ export async function fetchReleaseResults(releaseId: string) {
   return apiClient.get<import('@/types/results').ReleaseResultsResponse>(`/api/releases/${releaseId}/results`);
 }
 
-
-
+// Part 21 Version Comparison API integration
+export async function fetchVersionComparison(projectId: string, baseReleaseId: string, targetReleaseId: string) {
+  const params = new URLSearchParams({ baseReleaseId, targetReleaseId });
+  return apiClient.get<import('@/types/comparison').VersionComparisonResponse>(`/api/projects/${projectId}/releases/compare?${params.toString()}`);
+}
