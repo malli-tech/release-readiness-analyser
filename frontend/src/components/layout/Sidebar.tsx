@@ -31,6 +31,7 @@ interface NavItem {
   exact?: boolean;
   highlight?: boolean;
   badge?: string;
+  title?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
@@ -46,6 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       href: currentProjectId ? `/projects/${currentProjectId}/releases` : '/projects',
       label: 'Releases',
       icon: GitBranch,
+      badge: currentProjectId ? undefined : 'Select Project',
+      title: currentProjectId ? 'View project releases' : 'Select a project to view its releases',
     },
     { id: 'reports', href: '/reports', label: 'Reports', icon: FileText },
   ];
@@ -107,6 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                   key={item.id}
                   href={item.href}
                   onClick={onClose}
+                  title={item.title || item.label}
                   className={cn(
                     'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors',
                     isActive
@@ -158,6 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                 key={item.id}
                 href={item.href}
                 onClick={onClose}
+                title={item.title || item.label}
                 className={cn(
                   'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
                   isActive
