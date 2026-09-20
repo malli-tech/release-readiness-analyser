@@ -9,6 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface ReleaseRepository extends MongoRepository<Release, String> {
+    List<Release> findByUserIdOrderByCreatedAtDesc(String userId);
     List<Release> findByProjectIdAndUserIdOrderByCreatedAtDesc(String projectId, String userId);
     List<Release> findByProjectIdOrderByCreatedAtDesc(String projectId);
     Optional<Release> findByIdAndUserId(String id, String userId);

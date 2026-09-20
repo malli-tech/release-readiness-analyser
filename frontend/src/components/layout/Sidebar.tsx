@@ -44,11 +44,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { id: 'projects', href: '/projects', label: 'Projects', icon: FolderGit2 },
     {
       id: 'releases',
-      href: currentProjectId ? `/projects/${currentProjectId}/releases` : '/projects',
+      href: currentProjectId ? `/projects/${currentProjectId}/releases` : '/releases',
       label: 'Releases',
       icon: GitBranch,
-      badge: currentProjectId ? undefined : 'Select Project',
-      title: currentProjectId ? 'View project releases' : 'Select a project to view its releases',
+      title: currentProjectId ? 'View project releases' : 'View all project releases',
     },
     { id: 'reports', href: '/reports', label: 'Reports', icon: FileText },
   ];

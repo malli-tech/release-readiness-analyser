@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,6 +72,23 @@ public class ReleaseService {
 
         Release savedRelease = releaseRepository.save(release);
         return mapToResponse(savedRelease);
+    }
+
+    public List<ReleaseResponse> getAllUserReleases() {
+        User user = getAuthenticatedUser();
+        List<Release> releases = releaseRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        Map<String, String> projectNames = projectRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .collect(Collectors.toMap(Project::getId, Project::getName, (a, b) -> a));
+
+        return releases.stream().map(release -> {
+            ReleaseResponse res = mapToResponse(release);
+            if (release.getProjectId() != null) {
+                res.setProjectName(projectNames.get(release.getProjectId()));
+            }
+            return res;
+        }).collect(Collectors.toList());
     }
 
     public List<ReleaseResponse> getProjectReleases(String projectId) {

@@ -35,6 +35,22 @@ export function useReleases(projectId?: string) {
     }
   }, [isAuthenticated, projectId]);
 
+  const getAllUserReleases = useCallback(async (): Promise<Release[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.get<Release[]>('/api/releases');
+      setReleases(data);
+      return data;
+    } catch (err: unknown) {
+      const msg = err instanceof ApiError ? err.message : 'Failed to fetch releases. Please try again.';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (projectId) {
       fetchReleases(projectId);
@@ -69,6 +85,7 @@ export function useReleases(projectId?: string) {
     loading,
     error,
     fetchReleases,
+    getAllUserReleases,
     getRelease,
     createRelease,
     updateRelease,

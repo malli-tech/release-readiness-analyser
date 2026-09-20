@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,6 +25,12 @@ public class ReleaseController {
 
     public ReleaseController(ReleaseService releaseService) {
         this.releaseService = releaseService;
+    }
+
+    @GetMapping("/api/releases")
+    public ResponseEntity<List<ReleaseResponse>> getAllUserReleases() {
+        List<ReleaseResponse> releases = releaseService.getAllUserReleases();
+        return ResponseEntity.ok(releases);
     }
 
     @PostMapping("/api/projects/{projectId}/releases")

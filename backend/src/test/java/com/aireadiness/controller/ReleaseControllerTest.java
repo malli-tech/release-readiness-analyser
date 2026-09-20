@@ -242,4 +242,25 @@ public class ReleaseControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
     }
+
+    @Test
+    @DisplayName("11. GET /api/releases should return 200 OK and list of authenticated user's releases across projects")
+    public void testGetAllUserReleases() throws Exception {
+        String token = "valid.token";
+        mockAuth(token, "student@univ.edu");
+
+        ReleaseResponse r1 = new ReleaseResponse("rel-1", "proj-1", "Project Alpha", "v1.1", "Update", "Desc", "READY_FOR_ANALYSIS", Instant.now(), Instant.now());
+        ReleaseResponse r2 = new ReleaseResponse("rel-2", "proj-2", "Project Beta", "v2.0", "Major Release", "Desc", "NOT_ANALYZED", Instant.now(), Instant.now());
+
+        when(releaseService.getAllUserReleases()).thenReturn(Arrays.asList(r1, r2));
+
+        mockMvc.perform(get("/api/releases")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value("rel-1"))
+                .andExpect(jsonPath("$[0].projectName").value("Project Alpha"))
+                .andExpect(jsonPath("$[1].id").value("rel-2"))
+                .andExpect(jsonPath("$[1].projectName").value("Project Beta"));
+    }
 }

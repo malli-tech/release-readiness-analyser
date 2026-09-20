@@ -6,6 +6,7 @@ public class ReleaseResponse {
 
     private String id;
     private String projectId;
+    private String projectName;
     private String version;
     private String name;
     private String description;
@@ -27,6 +28,11 @@ public class ReleaseResponse {
         this.updatedAt = updatedAt;
     }
 
+    public ReleaseResponse(String id, String projectId, String projectName, String version, String name, String description, String status, Instant createdAt, Instant updatedAt) {
+        this(id, projectId, version, name, description, status, createdAt, updatedAt);
+        this.projectName = projectName;
+    }
+
     public String getId() {
         return id;
     }
@@ -41,6 +47,14 @@ public class ReleaseResponse {
 
     public void setProjectId(String projectId) {
         this.projectId = projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     public String getVersion() {

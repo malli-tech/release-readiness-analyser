@@ -100,3 +100,8 @@ export async function fetchFindingRecommendation(analysisId: string, findingId: 
   return apiClient.get<import('@/types/recommendation').RecommendationRecord>(`/api/analyses/${analysisId}/findings/${findingId}/recommendation`);
 }
 
+export async function fetchAllUserReleases() {
+  return apiClient.get<import('@/types/release').Release[]>(`/api/releases`);
+}
+
+
