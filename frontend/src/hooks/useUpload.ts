@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { UploadMode, UploadState, UploadResponse } from '@/types/upload';
 import { ApiError } from '@/lib/api';
-
+import { getToken } from '@/lib/auth';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export function useUpload() {
@@ -79,8 +79,8 @@ export function useUpload() {
         reject(new Error('Upload cancelled.'));
       });
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-
+    
+const token = getToken();
       xhr.open('POST', `${API_BASE_URL}/api/releases/${releaseId}/upload`);
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
