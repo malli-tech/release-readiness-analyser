@@ -24,6 +24,7 @@ export interface SidebarProps {
 }
 
 interface NavItem {
+  id: string;
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -38,20 +39,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const currentProjectId = (params?.projectId as string) || null;
 
   const navigation: NavItem[] = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-    { href: '/projects', label: 'Projects', icon: FolderGit2 },
+    { id: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+    { id: 'projects', href: '/projects', label: 'Projects', icon: FolderGit2 },
     {
+      id: 'releases',
       href: currentProjectId ? `/projects/${currentProjectId}/releases` : '/projects',
       label: 'Releases',
       icon: GitBranch,
     },
-    { href: '/reports', label: 'Reports', icon: FileText },
+    { id: 'reports', href: '/reports', label: 'Reports', icon: FileText },
   ];
 
   const bottomNavigation: NavItem[] = [
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { id: 'settings', href: '/settings', label: 'Settings', icon: Settings },
   ];
-
 
   return (
     <>
@@ -90,7 +91,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             </Link>
           </div>
 
-
           {/* Main Navigation */}
           <nav className="space-y-1">
             <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
               return (
                 <Link
-                  key={item.href}
+                  key={item.id}
                   href={item.href}
                   onClick={onClose}
                   className={cn(
@@ -145,7 +145,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               <span>View Evaluation</span>
               <ChevronRight className="w-3 h-3" />
             </Link>
-
           </div>
         </div>
 
@@ -156,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 onClick={onClose}
                 className={cn(
