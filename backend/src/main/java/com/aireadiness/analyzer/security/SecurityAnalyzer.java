@@ -6,6 +6,7 @@ import com.aireadiness.analyzer.security.rules.*;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.ProjectProfile;
 import com.aireadiness.model.SecuritySummary;
+import com.aireadiness.analyzer.util.WorkspaceFileFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -112,6 +113,7 @@ public class SecurityAnalyzer implements Analyzer {
 
                 Path relativePath = workspaceDir.relativize(path).normalize();
                 if (relativePath.toString().startsWith("..")) continue;
+                if (WorkspaceFileFilter.isIgnoredPath(relativePath)) continue;
 
                 String relPathStr = relativePath.toString().replace('\\', '/');
                 String fnLower = path.getFileName().toString().toLowerCase();

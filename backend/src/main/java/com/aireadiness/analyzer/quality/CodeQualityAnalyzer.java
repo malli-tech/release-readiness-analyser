@@ -4,6 +4,7 @@ import com.aireadiness.analyzer.Analyzer;
 import com.aireadiness.analyzer.quality.rules.*;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.ProjectProfile;
+import com.aireadiness.analyzer.util.WorkspaceFileFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -94,6 +95,7 @@ public class CodeQualityAnalyzer implements Analyzer {
                 // Path containment safety check
                 Path relativePath = workspaceDir.relativize(path).normalize();
                 if (relativePath.toString().startsWith("..")) continue;
+                if (WorkspaceFileFilter.isIgnoredPath(relativePath)) continue;
 
                 String relPathStr = relativePath.toString().replace('\\', '/');
                 String ext = getExtension(path.getFileName().toString()).toLowerCase();

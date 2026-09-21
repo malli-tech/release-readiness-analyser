@@ -1,5 +1,6 @@
 package com.aireadiness.service;
 
+import com.aireadiness.analyzer.util.WorkspaceFileFilter;
 import com.aireadiness.model.*;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +59,9 @@ public class ProjectDetectionService {
                 Path relative = workspaceDir.relativize(path).normalize();
                 if (relative.toString().startsWith("..")) {
                     continue; // skip escaped paths
+                }
+                if (WorkspaceFileFilter.isIgnoredPath(relative)) {
+                    continue; // skip node_modules, target, build, etc.
                 }
 
                 String relPathStr = relative.toString().replace('\\', '/');

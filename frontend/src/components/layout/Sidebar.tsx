@@ -49,7 +49,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       icon: GitBranch,
       title: currentProjectId ? 'View project releases' : 'View all project releases',
     },
-    { id: 'reports', href: '/reports', label: 'Reports', icon: FileText },
+    {
+      id: 'reports',
+      href: currentProjectId ? `/projects/${currentProjectId}/reports` : '/reports',
+      label: 'Reports',
+      icon: FileText,
+      title: currentProjectId ? 'View project reports' : 'View all reports',
+    },
   ];
 
   const bottomNavigation: NavItem[] = [

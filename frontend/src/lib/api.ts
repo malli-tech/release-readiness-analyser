@@ -114,3 +114,16 @@ export async function fetchVersionComparison(projectId: string, baseReleaseId: s
   const params = new URLSearchParams({ baseReleaseId, targetReleaseId });
   return apiClient.get<import('@/types/comparison').VersionComparisonResponse>(`/api/projects/${projectId}/releases/compare?${params.toString()}`);
 }
+
+// Release Reports API integration
+export async function fetchAllUserReports() {
+  return apiClient.get<import('@/types/report').ReleaseReport[]>(`/api/reports`);
+}
+
+export async function fetchProjectReports(projectId: string) {
+  return apiClient.get<import('@/types/report').ReleaseReport[]>(`/api/projects/${projectId}/reports`);
+}
+
+export async function fetchReleaseReport(projectId: string, releaseId: string) {
+  return apiClient.get<import('@/types/report').ReleaseReport>(`/api/projects/${projectId}/reports/${releaseId}`);
+}

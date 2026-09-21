@@ -27,6 +27,7 @@ import {
   Layers,
   CheckCircle2,
   Clock,
+  FileText,
 } from 'lucide-react';
 
 export default function GlobalReleasesPage() {
@@ -341,6 +342,11 @@ export default function GlobalReleasesPage() {
                                 <Link href={`/releases/${release.id}/analysis`}>
                                   <Button size="sm" variant="outline" leftIcon={<BarChart3 className="w-3 h-3" />}>
                                     Analysis
+                                  </Button>
+                                </Link>
+                                <Link href={`/projects/${release.projectId}/reports/${release.id}`}>
+                                  <Button size="sm" variant="outline" leftIcon={<FileText className="w-3 h-3" />}>
+                                    Report
                                   </Button>
                                 </Link>
                               </div>

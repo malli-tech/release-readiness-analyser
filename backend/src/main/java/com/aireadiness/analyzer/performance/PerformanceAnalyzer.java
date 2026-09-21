@@ -6,6 +6,7 @@ import com.aireadiness.analyzer.performance.rules.*;
 import com.aireadiness.model.Finding;
 import com.aireadiness.model.PerformanceSummary;
 import com.aireadiness.model.ProjectProfile;
+import com.aireadiness.analyzer.util.WorkspaceFileFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -109,6 +110,7 @@ public class PerformanceAnalyzer implements Analyzer {
 
                 Path relativePath = workspaceDir.relativize(path).normalize();
                 if (relativePath.toString().startsWith("..")) continue;
+                if (WorkspaceFileFilter.isIgnoredPath(relativePath)) continue;
 
                 String relPathStr = relativePath.toString().replace('\\', '/');
                 String fnLower = path.getFileName().toString().toLowerCase();

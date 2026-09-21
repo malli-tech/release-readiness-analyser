@@ -271,6 +271,64 @@ class UnifiedAnalysisServiceTest {
         assertEquals("LOW", findings.get(3).getSeverity());
     }
 
+    @Test
+    @DisplayName("Should assign deterministic, non-null Finding IDs to all unified findings")
+    void testDeterministicFindingIds() {
+        ProjectProfile profile = new ProjectProfile();
+        profile.setPrimaryLanguage("Java");
+        when(projectDetectionService.detectProject(any(), any())).thenReturn(profile);
+
+        Finding finding1 = createFinding("CODE_QUALITY", "RULE_1", "HIGH", "src/Main.java", 15);
+        Finding finding2 = createFinding("SECURITY", "RULE_2", "MEDIUM", "src/Auth.java", 42);
+
+        when(codeQualityAnalyzer.analyze(any(), any(), any(), any(), any())).thenReturn(List.of(finding1));
+        when(securityAnalyzer.analyze(any(), any(), any(), any(), any())).thenReturn(List.of(finding2));
+
+        when(analysisRepository.save(any())).thenAnswer(inv -> {
+            Analysis a = inv.getArgument(0);
+            if (a.getId() == null) a.setId("ans-mock-1");
+            return a;
+        });
+
+        AnalysisResponse response = analysisService.startAnalysis("rel-1");
+
+        List<Finding> findings = response.getFindings();
+        assertEquals(2, findings.size());
+
+        for (Finding f : findings) {
+            assertNotNull(f.getId(), "Finding ID must not be null");
+            assertFalse(f.getId().trim().isEmpty(), "Finding ID must not be empty");
+            assertFalse(f.getId().startsWith("null:"), "Finding ID must not start with 'null:'");
+        }
+    }
+
+    @Test
+    @DisplayName("Should generate identical Finding ID for identical finding attributes")
+    void testIdenticalFindingIdConsistency() {
+        ProjectProfile profile = new ProjectProfile();
+        profile.setPrimaryLanguage("Java");
+        when(projectDetectionService.detectProject(any(), any())).thenReturn(profile);
+
+        Finding f1 = createFinding("CODE_QUALITY", "RULE_1", "HIGH", "src/Main.java", 15);
+        when(codeQualityAnalyzer.analyze(any(), any(), any(), any(), any())).thenReturn(List.of(f1));
+        when(analysisRepository.save(any())).thenAnswer(inv -> {
+            Analysis a = inv.getArgument(0);
+            if (a.getId() == null) a.setId("ans-mock-1");
+            return a;
+        });
+
+        AnalysisResponse response1 = analysisService.startAnalysis("rel-1");
+        String id1 = response1.getFindings().get(0).getId();
+
+        Finding f2 = createFinding("CODE_QUALITY", "RULE_1", "HIGH", "src/Main.java", 15);
+        when(codeQualityAnalyzer.analyze(any(), any(), any(), any(), any())).thenReturn(List.of(f2));
+
+        AnalysisResponse response2 = analysisService.startAnalysis("rel-1");
+        String id2 = response2.getFindings().get(0).getId();
+
+        assertEquals(id1, id2, "Identical finding attributes must produce identical deterministic Finding IDs");
+    }
+
     private Finding createFinding(String category, String ruleId, String severity, String filePath, int lineNumber) {
         Finding f = new Finding();
         f.setCategory(category);

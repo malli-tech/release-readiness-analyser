@@ -326,6 +326,9 @@ public class AnalysisService {
 
             String key = analysisId + ":" + ruleId + ":" + filePath + ":" + line + ":" + evidenceHash;
             if (seenKeys.add(key)) {
+                if (f.getId() == null || f.getId().trim().isEmpty()) {
+                    f.setId(key);
+                }
                 deduplicated.add(f);
             }
         }
