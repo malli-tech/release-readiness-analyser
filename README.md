@@ -319,3 +319,29 @@ The platform enforces a strict conceptual distinction between core analysis comp
   - Guarantees 1-to-1 traceability from each recommendation back to its source `findingId` and `analysisId`.
   - Handles zero findings (returns empty list), duplicate findings (deduplicates by `findingId`), and unsupported rules (appends diagnostic warning without failing analysis).
   - Sorts recommendations deterministically by `Priority` -> `Category` -> `Rule ID` -> `Finding ID`.
+
+---
+
+## Deployment Architecture
+
+The AI Release Readiness Analyzer is structured for cloud deployment:
+
+```
+GitHub Repository
+   │
+   ├─► Render Frontend (Next.js 15 App Router)
+   │      │
+   │      ▼ (HTTPS / REST API)
+   │
+   └─► Render Backend (Spring Boot 3.4 Java Web Service)
+          │
+          ├─► MongoDB Atlas (Production Document Database)
+          │
+          └─► OpenAI API (LLM Reviews & Embeddings)
+```
+
+For step-by-step setup guides and environment configuration:
+- [Deployment Overview](deployment/README.md)
+- [Render Backend Setup](deployment/render-backend.md)
+- [Render Frontend Setup](deployment/render-frontend.md)
+- [MongoDB Atlas Setup](deployment/mongodb-atlas.md)

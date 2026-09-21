@@ -1,9 +1,52 @@
+# Frontend / Node
 node_modules/
-target/
-__pycache__/
-*.pyc
-.env
-.env.local
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
 dist/
 build/
-.next/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backend / Java
+target/
+backend/target/
+*.log
+logs/
+application-local.properties
+application-local.yml
+
+# Environment Files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+!.env.example
+!*.env.example
+
+# Uploads / Runtime Data / Workspaces
+uploads/
+temp/
+tmp/
+data/
+target/workspaces/
+
+# Python / Cache
+__pycache__/
+*.pyc
+
+# IDE & Editors
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS System Files
+.DS_Store
+Thumbs.db
